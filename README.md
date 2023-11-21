@@ -52,7 +52,7 @@ Here you can find a list of the recommended prerequisites for this repository.
 - Pre-installed tools:
   - Most recent *AWS CLI* (`2.13.37` or higher).
   - Most recent *AWS SAM CLI* (`1.103.0` or higher).
-  - Node.js in version `16.20.x` or higher.
+  - Node.js in version `20.9.x` or higher.
   - Python in version `3.10.x` or higher.
 - Configured profile in the installed *AWS CLI* with credentials for your *AWS IAM* user account of choice.
 
@@ -115,13 +115,15 @@ Keep in mind that there will be also one additional *Amazon S3* bucket created f
 [![One-click deployment](https://oneclick.amplifyapp.com/button.svg)](https://console.aws.amazon.com/amplify/home#/deploy?repo=https://github.com/build-on-aws/bookstore-demo-app-with-authz)
 
 1. Use **1-click deployment** button above, and continue by clicking "*Connect to GitHub*".
-2. If you don't have an *IAM Service Role* with administrative permissions, select "*Create new role*". Otherwise, proceed to the 5th step.
+2. If you don't have an *IAM Service Role* with administrative permissions, select "*Create new role*".
+   - If you already have that, you can jump directly to the 5th step.
 3. Select "*Amplify*" from the drop-down, and select "*Amplify - Backend Deployment*", then click "*Next*".
 4. Click "*Next*" again, then give the role a name and click "*Create role*".
 5. In the Amplify console and select the role you created, then click "*Save and deploy*".
 6. Amplify Console will fork this repository into your *GitHub* account and deploy it for you.
 7. You should now be able to see your app being deployed in the [Amplify Console](https://console.aws.amazon.com/amplify/home).
-8. Within your new app in Amplify Console, wait for deployment to complete (this should take approximately ~10 minutes for the first deploy).
+8. Within your new app in Amplify Console, wait for deployment to complete.
+   - This should take approximately ~10-15 minutes for the first deploy.
 
 ##### Clean Up
 
