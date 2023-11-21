@@ -17,9 +17,8 @@
         </div>
       </v-toolbar-items>
     </v-app-bar>
-    <v-content>
+    <v-main>
       <v-container fluid>
-        <loading-overlay />
         <v-fade-transition mode="out-in">
           <router-view></router-view>
         </v-fade-transition>
@@ -35,7 +34,7 @@
       >
         <cart-drawer />
       </v-navigation-drawer>
-    </v-content>
+    </v-main>
   </v-app>
 </template>
 
@@ -43,7 +42,7 @@
 import { mapGetters } from "vuex";
 
 export default {
-  name: "app",
+  name: "bookstore-demo-app-wyh",
   data() {
     return {
       drawer: null,

@@ -27,17 +27,6 @@ create-bucket:
 	@echo "S3 Bucket: Checking if s3://$(S3_BUCKET) exists ..."
 	@aws s3api head-bucket --bucket $(S3_BUCKET) || (echo "S3 Bucket: Bucket s3://$(S3_BUCKET) doest not exist, creating it ..." ; aws s3 mb s3://$(S3_BUCKET) --region $(REGION))
 
-amplify-deploy:
-	aws cloudformation deploy \
-		--template-file ./amplify-ci/amplify-template.yaml \
-		--capabilities CAPABILITY_IAM \
-		--parameter-overrides \
-			OauthToken=$(GITHUB_OAUTH_TOKEN) \
-			Repository=$(GITHUB_REPO) \
-			BranchName=$(GITHUB_BRANCH) \
-			SrcS3Bucket=$(S3_BUCKET) \
-		--stack-name bookstore-demo-app-with-authz-amplify
-
 frontend-serve:
 	$(MAKE) -C frontend serve
 

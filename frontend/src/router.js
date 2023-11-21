@@ -18,16 +18,13 @@ getUser().then((user) => {
 AmplifyEventBus.$on("authState", async (state) => {
   if (state === "signedOut") {
     store.commit("setUser", null);
+    store.commit("setUpProducts", null);
     router
-      .push({
-        path: "/auth",
-      })
+      .push({ path: "/auth" })
       .catch(() => {});
   } else if (state === "signedIn") {
     router
-      .push({
-        path: new URLSearchParams(window.location.search).get("redirect") || "/",
-      })
+      .push({ path: new URLSearchParams(window.location.search).get("redirect") || "/" })
       .catch(() => {});
   }
 });
@@ -45,6 +42,7 @@ function getUser() {
       return null;
     });
 }
+
 const routes = [
   {
     path: "/",

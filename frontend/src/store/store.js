@@ -10,8 +10,6 @@ export default new Vuex.Store({
   state: {
     products: null,
     user: null,
-    loading: false,
-    loadingText: "",
   },
   getters,
   mutations,

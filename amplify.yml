@@ -3,7 +3,6 @@ version: 1
 env:
   variables:
     ORIGIN: https://${AWS_BRANCH//\//-}.${AWS_APP_ID}.amplifyapp.com
-    STACKNAME: bookstore-demo-app-with-authz-amplify
 
 backend:
   phases:
