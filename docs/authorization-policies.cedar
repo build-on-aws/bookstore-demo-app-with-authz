@@ -21,12 +21,12 @@ when {
 
 permit (
   //
-  // This is how the user identifiers should look like in production cases.
+  // Ideally, in production cases you should have here immutable identifiers.
   // According to the best practices, you should avoid mutable identifiers - like username:
   //
   //   https://docs.cedarpolicy.com/bestpractices/bp-mutable-identifiers.html
   //
-  principal == Bookstore::User::"21fccbd2-75ad-4bac-84e6-1e2cecedeab3",
+  principal == Bookstore::User::"Dante",
   action in [ Bookstore::Action::"View" ],
   resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
 );

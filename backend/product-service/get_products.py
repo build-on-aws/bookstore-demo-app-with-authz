@@ -34,17 +34,22 @@ def lambda_handler(event: dict, context: LambdaContext):
         user_info = get_user_claims(jwt_token, source_ip)
 
     logger.info(f"User info: {user_info}")
+    product_list = []
 
-    # Construct the authorization request.
-    authz_request = construct_authz_request(user_info)
-    logger.info(f"Authz request: {authz_request}")
+    if user_info["role"] == 'Publisher' and user_info["username"] == 'Dante':
+        # Handle batch authorization for publisher 'Dante'.
+        product_list = handle_batch_is_authorized(user_info)
+    else:
+        # Construct the authorization request for other scenarios.
+        authz_request = construct_authz_request(user_info)
+        logger.info(f"Authorization request: {authz_request}")
 
-    # Make the `is_authorized` call to Amazon Verified Permissions.
-    response = verified_permissions_client.is_authorized(**authz_request)
-    logger.info(f"Authorization response: {response}")
+        # Make the `is_authorized` call to Amazon Verified Permissions.
+        response = verified_permissions_client.is_authorized(**authz_request)
+        logger.info(f"Authorization response: {response}")
 
-    # Determine which product list to return.
-    product_list = determine_product_list(response, user_info)
+        # Determine which product list to return.
+        product_list = determine_product_list(response, user_info)
 
     logger.info("Successfully returning product list")
 
@@ -112,6 +117,7 @@ def construct_authz_request(user_info):
 
 policies = {
     "PUBLISHERS_VIEW": "Allows publishers to see books they have published",
+    "PUBLISHER_ACCESS_TO_ONE_BOOK": "Allows specific user to see a specific book",
     "PREMIUM_OFFERS": "Allows customers with specific value for yearsAsMember attribute to list premium offers",
     "NO_PREMIUM_OFFERS": "Denies customers with specific value for yearsAsMember attribute to list premium offers",
 }
@@ -160,6 +166,27 @@ def determine_product_list(response, user_info):
     return books['books']  # Return all books if no specific policy applies.
 
 
+def determine_product_list_for_publisher(responses, user_info):
+    allowed_books = []
+
+    for response in responses.get('results', []):
+        if response.get('decision') == 'ALLOW':
+            policy_description = get_policy_description(response)
+
+            # Check if the policy allows the publisher to see the books they have published.
+            # If not, check the other policy, if that allows a specific user to see a specific book.
+            if policy_description == policies["PUBLISHERS_VIEW"]:
+                allowed_books.extend([book for book in books['books'] if book['publisher'] == user_info['username']])
+            elif policy_description == policies["PUBLISHER_ACCESS_TO_ONE_BOOK"]:
+                book_id = response['request']['resource']['entityId']
+                allowed_books.extend([book for book in books['books'] if book['id'] == book_id])
+
+    # Remove duplicates, if any.
+    allowed_books = [dict(t) for t in {tuple(book.items()) for book in allowed_books}]
+
+    return allowed_books
+
+
 def get_policy_description(response):
     logger.info(f"response info: {response}")
     policy_id = response.get('determiningPolicies', [{}])[0].get('policyId')
@@ -189,3 +216,106 @@ def filter_books_based_on_policy(response, user_info, without_premium_offers=Fal
         return books['books']
     else:
         return []
+
+
+def handle_batch_is_authorized(user_info):
+    batch_request = {
+        'policyStoreId': os.environ.get("POLICY_STORE_ID"),
+        'entities': {
+            'entityList': [
+                {
+                    'identifier': {
+                        'entityType': 'Bookstore::User',
+                        'entityId': 'Dante'
+                    },
+                    'attributes': {},
+                    'parents': [
+                        {
+                            'entityType': 'Bookstore::Role',
+                            'entityId': 'Publisher'
+                        }
+                    ]
+                },
+                {
+                    'identifier': {
+                        'entityType': 'Bookstore::Book',
+                        'entityId': 'em1oadaa-b22k-4ea8-kk33-f6m217604o3m'
+                    },
+                    'attributes': {
+                        'owner': {
+                            'entityIdentifier': {
+                                'entityType': 'Bookstore::User',
+                                'entityId': 'William'
+                            }
+                        }
+                    },
+                    'parents': []
+                },
+                {
+                    'identifier': {
+                        'entityType': 'Bookstore::Book',
+                        'entityId': 'fn2padaa-c33l-4ea8-ll44-g7n217604p4n'
+                    },
+                    'attributes': {
+                        'owner': {
+                            'entityIdentifier': {
+                                'entityType': 'Bookstore::User',
+                                'entityId': 'Dante'
+                            }
+                        }
+                    },
+                    'parents': []
+                }
+            ]
+        },
+        'requests': [
+            {
+                'principal': {
+                    'entityType': 'Bookstore::User',
+                    'entityId': 'Dante'
+                },
+                'action': {
+                    'actionType': 'Bookstore::Action',
+                    'actionId': 'View'
+                },
+                'resource': {
+                    'entityType': 'Bookstore::Book',
+                    'entityId': 'em1oadaa-b22k-4ea8-kk33-f6m217604o3m'
+                },
+                'context': {
+                    'contextMap': {
+                        'region': {
+                            'string': 'US'
+                        }
+                    }
+                }
+            },
+            {
+                'principal': {
+                    'entityType': 'Bookstore::User',
+                    'entityId': 'Dante'
+                },
+                'action': {
+                    'actionType': 'Bookstore::Action',
+                    'actionId': 'View'
+                },
+                'resource': {
+                    'entityType': 'Bookstore::Book',
+                    'entityId': 'fn2padaa-c33l-4ea8-ll44-g7n217604p4n'
+                },
+                'context': {
+                    'contextMap': {
+                        'region': {
+                            'string': 'US'
+                        }
+                    }
+                }
+            }
+        ]
+    }
+
+    # Call `batch_is_authorized` with the batch request.
+    responses = verified_permissions_client.batch_is_authorized(**batch_request)
+    logger.info(f"Bulk authorization response: {responses}")
+
+    return determine_product_list_for_publisher(responses, user_info)

@@ -109,7 +109,7 @@ We have crafted several scenarios to demonstrate the capabilities of our authori
 
 #### Relevant AVP Policy
 
-- **Policy Name:** RbacAdminStaticPolicy (in product.yaml file)
+- **Policy Name:** `RbacAdminStaticPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
   permit(
@@ -187,7 +187,7 @@ Tom is associated with the 'Admin' role. This role is crucial in determining his
 
 #### Relevant AVP Policy
 
-- **Policy Name:** ExplicitDenyAdminFrankPolicy (in product.yaml file)
+- **Policy Name:** `ExplicitDenyAdminFrankPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
   forbid(
@@ -253,7 +253,7 @@ The authorization request for the user 'Frank' with the role 'Admin' is structur
 
 In this scenario, the explicit deny policy for Frank takes precedence, showcasing the power and flexibility of fine-grained access control in AVP. Despite his Admin role, Frank's access to view books is explicitly denied, illustrating the importance of specific policy definitions in access management.
 
-### Scenario 3: Publisher Resource Owner - User Dante Part I
+### Scenario 3: Publisher Resource Owner - User Dante: Bulk Authorization
 
 #### User Requirement
 
@@ -263,48 +263,56 @@ In this scenario, the explicit deny policy for Frank takes precedence, showcasin
   - **Years as Member:** Not applicable for this role, so could be any value.
   - **Location:** United States (USA)
 
-#### Relevant AVP Policy
+#### Relevant AVP Policies
 
-- **Policy Name:** RbacResourceOwnerStaticPolicy (in product.yaml file)
-- **Definition:**
-  ```cedar
-  permit (
-    principal in Bookstore::Role::"Publisher",
-    action in [Bookstore::Action::"View"],
-    resource
-  )
-  when {
-    principal == resource.owner
-  };
-  ```
-- **Description:** Allows any user with has a role Publisher (like Dante), to view the books he has published. This policy is based on the role of the user as a Publisher and the ownership of the book, ensuring that publishers can access their own published works.
+1. **Policy Name:** `RbacResourceOwnerStaticPolicy` (in `authorization.yaml` file)
+   **Definition:**
+   ```cedar
+   permit (
+     principal in Bookstore::Role::"Publisher",
+     action in [ Bookstore::Action::"View" ],
+     resource
+   )
+   when {
+     principal == resource.owner
+   };
+   ```
+   **Description:** Allows any user with the role of Publisher (like Dante), to view the books he has published. This policy is based on the role of the user as a Publisher and the ownership of the book, ensuring that publishers can access their own published works.
+2. **Policy Name:** `RbacExplicitStaticPolicy` (in `authorization.yaml` file)
+   **Definition:**
+   ```cedar
+   permit(
+     principal == Bookstore::User::"Dante",
+     action in [ Bookstore::Action::"View" ],
+     resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
+   );
+   ```
+   **Description:** This policy allows the user with the specific identifier (Dante) to view the book with the identifier `em1oadaa-b22k-4ea8-kk33-f6m217604o3m`. It's an explicit 'allow' policy that grants access to a particular resource in the database.
 
 #### Expected Data Visibility
 
-- **Outcome:** Publisher Dante will have access to view the specific books that he has published.
-- **Rationale:** The policy grants Dante, as a publisher, the right to view his own published books. This scenario demonstrates role-based access control combined with resource ownership, where Dante's role as a Publisher and his ownership of the book determine his access rights.
+- **Outcome:** Publisher Dante will have access to view the specific books that he has published, as well as the book explicitly specified in the second policy.
+- **Rationale:** The combined policies grant Dante, as a publisher, the right to view his own published books and a specific book identified by its unique resource identifier. This scenario demonstrates role-based access control combined with resource ownership and explicit resource identification.
 
-### Understanding the Authorization Request for Publisher User 'Dante'
+### Bulk Authorization for Publisher User 'Dante'
 
-The authorization request for Dante is designed to assess his permissions to view books he has published. Here's a breakdown of the request:
+In this scenario, we implement bulk authorization to efficiently handle multiple authorization requests for Dante. Bulk authorization allows us to process several authorization checks in a single request, enhancing performance and scalability.
 
-#### Authorization Request Details
+#### What is Bulk Authorization?
+
+Bulk authorization is a method of processing multiple authorization requests simultaneously. Instead of sending individual requests for each resource, a batch request is sent containing multiple entities and resources. This approach is particularly useful for users like publishers who need access to a large number of resources.
+
+#### Benefits of Bulk Authorization
+
+- **Efficiency:** Reduces the number of individual authorization requests, making the process faster.
+- **Scalability:** Handles multiple requests in one operation, ideal for scenarios with numerous resources.
+- **Improved User Experience:** Provides quicker and more streamlined access to multiple resources.
+
+#### Bulk Authorization Request for Dante
 
 ```json
 {
-  "policyStoreId": "YOUR-POLICY-STORE",
-  "principal": {
-    "entityType": "Bookstore::User",
-    "entityId": "Dante"
-  },
-  "action": {
-    "actionType": "Bookstore::Action",
-    "actionId": "View"
-  },
-  "resource": {
-    "entityType": "Bookstore::Book",
-    "entityId": "fn2padaa-c33l-4ea8-ll44-g7n217604p4n"
-  },
+  "policyStoreId": "YOUR_POLICY_STORE",
   "entities": {
     "entityList": [
       {
@@ -323,6 +331,21 @@ The authorization request for Dante is designed to assess his permissions to vie
       {
         "identifier": {
           "entityType": "Bookstore::Book",
+          "entityId": "em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
+        },
+        "attributes": {
+          "owner": {
+            "entityIdentifier": {
+              "entityType": "Bookstore::User",
+              "entityId": "William"
+            }
+          }
+        },
+        "parents": []
+      },
+      {
+        "identifier": {
+          "entityType": "Bookstore::Book",
           "entityId": "fn2padaa-c33l-4ea8-ll44-g7n217604p4n"
         },
         "attributes": {
@@ -337,39 +360,52 @@ The authorization request for Dante is designed to assess his permissions to vie
       }
     ]
   },
-  "context": {
-    "contextMap": {
-      "region": {
-        "string": "US"
+  "requests": [
+    {
+      "principal": {
+        "entityType": "Bookstore::User",
+        "entityId": "Dante"
+      },
+      "action": {
+        "actionType": "Bookstore::Action",
+        "actionId": "View"
+      },
+      "resource": {
+        "entityType": "Bookstore::Book",
+        "entityId": "em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
+      },
+      "context": {
+        "contextMap": {
+          "region": {
+            "string": "US"
+          }
+        }
+      }
+    },
+    {
+      "principal": {
+        "entityType": "Bookstore::User",
+        "entityId": "Dante"
+      },
+      "action": {
+        "actionType": "Bookstore::Action",
+        "actionId": "View"
+      },
+      "resource": {
+        "entityType": "Bookstore::Book",
+        "entityId": "fn2padaa-c33l-4ea8-ll44-g7n217604p4n"
+      },
+      "context": {
+        "contextMap": {
+          "region": {
+            "string": "US"
+          }
+        }
       }
     }
-  }
+  ]
 }
 ```
-
-Dante's role as a Publisher and his ownership of the book are central to the authorization decision.
-
-### Scenario 3: Publisher Resource Owner - User Dante Part II
-
-In addition to the existing policies and authorization requests, you can also implement a more specific policy that explicitly allows a particular user to view a specific book. This is particularly useful for granting access to individual resources based on unique identifiers.
-
-#### Relevant AVP Policy
-
-- **Policy Name:** RbacExplicitStaticPolicy (in product.yaml file)
-- **Definition:**
-  ```cedar
-  permit(
-    principal == Bookstore::User::"21fccbd2-75ad-4bac-84e6-1e2cecedeab3",
-    action in [Bookstore::Action::"View"],
-    resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
-  );
-  ```
-- **Description:** This policy allows the user with the specific identifier 21fccbd2-75ad-4bac-84e6-1e2cecedeab3 (Dante) to view the book with the identifier em1oadaa-b22k-4ea8-kk33-f6m217604o3m. It's an explicit 'allow' policy that grants access to a particular resource in the database.
-
-#### Expected Data Visibility
-
-- **Outcome:** Dante, identified by his unique UUID, will have access to view the specific book identified by its unique resource identifier.
-- **Rationale:** This policy demonstrates the capability of AVP to grant access based on specific user and resource identifiers, offering a highly granular level of control over resource visibility.
 
 ### Scenario 4: ABAC - Loyal Customer Access to Premium Offers Part I
 
@@ -383,7 +419,7 @@ In addition to the existing policies and authorization requests, you can also im
 
 #### Relevant AVP Policy
 
-- **Policy Name:** PermitAbacStaticPolicy (in product.yaml file)
+- **Policy Name:** `PermitAbacStaticPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
   permit (
@@ -468,7 +504,7 @@ In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribut
 
 #### Relevant AVP Policy
 
-- **Policy Name:** PermitAbacStaticPolicy (in product.yaml file)
+- **Policy Name:** `PermitAbacStaticPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
   permit (
@@ -553,7 +589,7 @@ In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribut
 
 #### Relevant AVP Policy
 
-- **Policy Name:** DenyAbacStaticPolicy (in product.yaml file)
+- **Policy Name:** DenyAbacStaticPolicy (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
   forbid(
@@ -638,7 +674,7 @@ In this scenario, Susan's role as a 'Customer' and her 'yearsAsMember' attribute
 
 #### Relevant AVP Policy
 
-- **Policy Name:** ContextStaticPolicy (in product.yaml file)
+- **Policy Name:** `ContextStaticPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
   forbid(
