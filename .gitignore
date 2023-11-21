@@ -1,0 +1,39 @@
+# macOS specifics.
+.DS_Store
+
+# Python virtualenv directory.
+.env/
+
+# Node.js dependencies.
+node_modules/
+
+# Front-end artifacts.
+dist/
+
+# AWS SAM.
+.aws-sam/
+
+# IDEs.
+.vscode/
+.idea/
+*.iml
+.ipynb_checkpoints/
+
+# Archives.
+*.zip
+*.tar.gz
+
+# Private scripts.
+*.private.sh
+
+# Temporary artifacts.
+.tmp/
+
+# CDK assets.
+cdk.out/
+.cdk.staging/
+cdk.context.json
+
+# Local assets.
+.env.*
+*.local

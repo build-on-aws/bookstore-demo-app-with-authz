@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Infrastructure as code for authentication layer (Amazon Cognito).
+
+Resources:
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-UserPool
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: yearsAsMember
+          AttributeDataType: Number
+          Mutable: true
+          Required: false
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: bookstore-demo-app-with-authz
+      GenerateSecret: false
+      UserPoolId: !Ref CognitoUserPool
+      ExplicitAuthFlows:
+        - ADMIN_NO_SRP_AUTH
+
+  UserPoolSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: /bookstore-demo-app-with-authz/authentication/user-pool-id
+      Value: !Ref CognitoUserPool
+
+  UserPoolARNSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: /bookstore-demo-app-with-authz/authentication/user-pool-arn
+      Value: !GetAtt CognitoUserPool.Arn
+
+  UserPoolAppClientSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: /bookstore-demo-app-with-authz/authentication/user-pool-client-id
+      Value: !Ref UserPoolClient
+
+Outputs:
+
+  CognitoUserPoolId:
+    Description: "Amazon Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
+
+  CognitoAppClientId:
+    Description: "Amazon Cognito App Client ID"
+    Value: !Ref UserPoolClient

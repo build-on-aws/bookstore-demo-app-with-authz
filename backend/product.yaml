@@ -1,0 +1,215 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Infrastructure as code for Product Service API (AWS Lambda, Amazon API Gateway, and related resources).
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+      - Label:
+          default: "Software Development Life Cycle (SDLC)"
+        Parameters:
+          - Stage
+
+      - Label:
+          default: "CORS Configuration"
+        Parameters:
+          - AllowedOrigin
+
+      - Label:
+          default: "Authentication Layer Configuration"
+        Parameters:
+          - UserPoolId
+
+      - Label:
+          default: "Authorization Layer Configuration"
+        Parameters:
+          - PolicyStoreId
+
+    ParameterLabels:
+      Stage:
+        default: "Name of the software development life cycle (SDLC) stage into which you are deploying."
+
+      AllowedOrigin:
+        default: "Allowed origin pattern for Cross-Origin Resource Sharing (CORS) configuration."
+
+      UserPoolId:
+        default: "Name of the AWS Systems Manager (SSM) parameter that contains Amazon Cognito User Pool ID."
+
+      PolicyStoreId:
+        default: "Name of the AWS Systems Manager (SSM) parameter that contains Amazon Verified Permissions Policy Store ID."
+
+Parameters:
+
+  Stage:
+    Type: String
+    Description: Name of the environment where the infrastructure will be deployed.
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Default: prod
+
+  AllowedOrigin:
+    Type: "String"
+    Description: Allowed origin pattern for Cross-Origin Resource Sharing (CORS) configuration.
+
+  UserPoolId:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Name of the AWS Systems Manager (SSM) parameter that contains Amazon Cognito User Pool ID.
+    Default: "/bookstore-demo-app-with-authz/authentication/user-pool-id"
+
+  PolicyStoreId:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Name of the AWS Systems Manager (SSM) parameter that contains Amazon Verified Permissions Policy Store identifier.
+    Default: "/bookstore-demo-app-with-authz/authorization/policy-store-id"
+
+Globals:
+
+  Function:
+    Timeout: 5
+    Tracing: Active
+    AutoPublishAlias: live
+    Runtime: python3.10
+    MemorySize: 256
+    Layers:
+      - !Sub "arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:3"
+
+  Api:
+    TracingEnabled: true
+    EndpointConfiguration: REGIONAL
+    OpenApiVersion: "2.0"
+    Cors:
+      AllowOrigin: !Sub "'${AllowedOrigin}'"
+      AllowMethods: "'OPTIONS,POST,GET'"
+      AllowHeaders: "'Content-Type,Authorization,authorization'"
+      AllowCredentials: true
+
+Resources:
+
+  UtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./utils/
+      CompatibleRuntimes:
+        - python3.10
+    Metadata:
+      BuildMethod: python3.10
+
+  GetProductsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${GetProductsFunction}"
+      RetentionInDays: 7
+
+  GetProductLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${GetProductFunction}"
+      RetentionInDays: 7
+
+  ProductServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: LambdaCloudWatchLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                  - "xray:PutTelemetryRecords"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+        - PolicyName: LambdaVerifiedPermissionsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "verifiedpermissions:isAuthorized"
+                  - "verifiedpermissions:GetPolicy"
+                Resource:
+                  - !Sub "arn:aws:verifiedpermissions::${AWS::AccountId}:policy-store/${PolicyStoreId}"
+
+  MainAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+
+  GetProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: product-service/
+      Handler: get_products.lambda_handler
+      Role: !GetAtt ProductServiceRole.Arn
+      Layers:
+        - !Ref UtilsLayer
+      Environment:
+        Variables:
+          LOG_LEVEL: "DEBUG"
+          POWERTOOLS_SERVICE_NAME: "product"
+          POWERTOOLS_METRICS_NAMESPACE: "bookstore-demo-app-with-authz"
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          POLICY_STORE_ID: !Ref PolicyStoreId
+          USER_POOL_ID: !Ref UserPoolId
+      Events:
+        ListProducts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MainAPI
+            Path: /product
+            Method: GET
+
+  GetProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: product-service/
+      Handler: get_product.lambda_handler
+      Role: !GetAtt ProductServiceRole.Arn
+      Layers:
+        - !Ref UtilsLayer
+      Environment:
+        Variables:
+          LOG_LEVEL: "DEBUG"
+          POWERTOOLS_SERVICE_NAME: "product"
+          POWERTOOLS_METRICS_NAMESPACE: "bookstore-demo-app-with-authz"
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          POLICY_STORE_ID: !Ref PolicyStoreId
+          USER_POOL_ID: !Ref UserPoolId
+      Events:
+        GetProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MainAPI
+            Path: /product/{book_id}
+            Method: GET
+
+  ProductServiceApiUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: /bookstore-demo-app-with-authz/product-service/product-service-api-url
+      Value: !Sub "https://${MainAPI}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+
+Outputs:
+
+  ProductServiceAPI:
+    Description: "Amazon API Gateway endpoint URL for a given stage representing Product Service API."
+    Value: !Sub "https://${MainAPI}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
