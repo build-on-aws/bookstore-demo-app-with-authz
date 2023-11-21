@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >
+  Infrastructure as code for front-end application (AWS Amplify).
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+      - Label:
+          default: "GitHub Integration Parameters"
+        Parameters:
+          - Repository
+          - BranchName
+          - GitHubPersonalToken
+
+      - Label:
+          default: "Code Artifacts Storage Configuration"
+        Parameters:
+          - SourceS3Bucket
+
+    ParameterLabels:
+      Repository:
+        default: "Full URL for the provided GitHub repository."
+
+      BranchName:
+        default: "Branch name from the provided GitHub repository."
+
+      GitHubPersonalToken:
+        default: "Personal access token for the connected GitHub account."
+
+      SourceS3Bucket:
+        default: "Name of the Amazon S3 bucket that will contain archives with code."
+
+Parameters:
+
+  Repository:
+    Type: String
+    Description: GitHub repository URL.
+
+  BranchName:
+    Type: String
+    Description: Branch name from the GitHub repository.
+    Default: main
+
+  GitHubPersonalToken:
+    Type: String
+    Description: Personal access token for GitHub.
+    NoEcho: true
+
+  SourceS3Bucket:
+    Type: String
+    Description: Amazon S3 bucket for source code storage.
+
+Resources:
+
+  AmplifyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - amplify.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: Amplify
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:CreateMultipartUpload"
+                  - "s3:ListBucket"
+                  - "s3:CreateBucket"
+                Resource:
+                  - !Sub "arn:aws:s3:::${SourceS3Bucket}"
+                  - !Sub "arn:aws:s3:::${SourceS3Bucket}/*"
+              - Effect: "Allow"
+                Action:
+                  - "cloudformation:Describe*"
+                  - "cloudformation:Create*"
+                  - "cloudformation:Execute*"
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - lambda:*
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*"
+              - Effect: Allow
+                Action:
+                  - lambda:GetLayerVersion
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython*"
+              - Effect: Allow
+                Action:
+                  - lambda:*EventSourceMapping
+                Resource:
+                  - "*"
+              - Effect: "Allow"
+                Action:
+                  - "cloudformation:GetTemplateSummary"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "iam:GetRole"
+                  - "iam:Create*"
+                  - "iam:Delete*"
+                  - "iam:PassRole"
+                  - "iam:*RolePolicy"
+                Resource:
+                  - "*"
+              - Effect: "Allow"
+                Action:
+                  - "apigateway:*"
+                Resource:
+                  - "*"
+              - Effect: "Allow"
+                Action:
+                  - "ssm:*"
+                Resource:
+                  - "*"
+              - Effect: "Allow"
+                Action:
+                  - "cognito-idp:*"
+                Resource:
+                  - "*"
+              - Effect: "Allow"
+                Action:
+                  - "sts:GetCallerIdentity"
+                Resource:
+                  - "*"
+
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      IAMServiceRole: !GetAtt AmplifyRole.Arn
+      Name: BookstoreDemoApp
+      Repository: !Ref Repository
+      Description: Bookstore Demo Application with Authorization
+      OauthToken: !Ref GitHubPersonalToken
+      CustomRules:
+        - Source: </^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json)$)([^.]+$)/>
+          Target: /
+          Status: 200
+      EnvironmentVariables:
+        - Name: S3_BUCKET
+          Value: !Ref SourceS3Bucket
+      Tags:
+        - Key: Name
+          Value: bookstore-demo-app-with-authz
+
+  AmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      Description: Name of the branch from which you have deployed the application.
+      BranchName: !Ref BranchName
+      EnableAutoBuild: true
+      Tags:
+        - Key: Name
+          Value: bookstore-demo-app-with-authz
+
+Outputs:
+
+  DefaultDomain:
+    Value: !GetAtt AmplifyApp.DefaultDomain
+
+  BranchURL:
+    Value: !Join [ ".", [ !GetAtt AmplifyBranch.BranchName, !GetAtt AmplifyApp.DefaultDomain ] ]

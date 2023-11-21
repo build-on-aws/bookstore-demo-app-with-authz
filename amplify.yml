@@ -1,0 +1,32 @@
+version: 1
+
+env:
+  variables:
+    ORIGIN: https://${AWS_BRANCH//\//-}.${AWS_APP_ID}.amplifyapp.com
+    STACKNAME: bookstore-demo-app-with-authz-amplify
+
+backend:
+  phases:
+    preBuild:
+      commands:
+        - curl "https://github.com/aws/aws-sam-cli/releases/download/v1.103.0/aws-sam-cli-linux-x86_64.zip" -L -o "aws-sam-cli.zip"
+        - unzip aws-sam-cli.zip -d sam-installation
+        - ./sam-installation/install
+        - pip3 install -U boto3
+    build:
+      commands:
+        - make backend
+
+frontend:
+  phases:
+    build:
+      commands:
+        - make frontend-build
+
+  artifacts:
+    baseDirectory: /frontend/dist
+    files:
+      - "**/*"
+
+  cache:
+    paths: []

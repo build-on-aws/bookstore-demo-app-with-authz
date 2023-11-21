@@ -1,0 +1,84 @@
+{
+  "Bookstore": {
+    "actions": {
+      "View": {
+        "appliesTo": {
+          "resourceTypes": [
+            "Book"
+          ],
+          "context": {
+            "type": "Record",
+            "attributes": {
+              "region": {
+                "required": true,
+                "name": "region",
+                "type": "String"
+              }
+            }
+          },
+          "principalTypes": [
+            "User"
+          ]
+        },
+        "memberOf": []
+      },
+      "ViewPremiumOffers": {
+        "appliesTo": {
+          "principalTypes": [
+            "User"
+          ],
+          "context": {
+            "type": "Record",
+            "attributes": {
+              "region": {
+                "required": true,
+                "type": "String",
+                "name": "region"
+              }
+            }
+          },
+          "resourceTypes": [
+            "Book"
+          ]
+        },
+        "memberOf": []
+      }
+    },
+    "entityTypes": {
+      "Role": {
+        "memberOfTypes": [],
+        "shape": {
+          "attributes": {},
+          "type": "Record"
+        }
+      },
+      "User": {
+        "memberOfTypes": [
+          "Role"
+        ],
+        "shape": {
+          "type": "Record",
+          "attributes": {
+            "yearsAsMember": {
+              "type": "Long",
+              "required": false
+            }
+          }
+        }
+      },
+      "Book": {
+        "memberOfTypes": [],
+        "shape": {
+          "attributes": {
+            "owner": {
+              "type": "Entity",
+              "required": true,
+              "name": "User"
+            }
+          },
+          "type": "Record"
+        }
+      }
+    }
+  }
+}

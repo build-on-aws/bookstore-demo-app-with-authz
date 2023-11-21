@@ -1,0 +1,4 @@
+python 3.10.1
+nodejs 16.20.2
+aws-sam-cli 1.103.0
+awscli 2.13.37

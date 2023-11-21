@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Infrastructure as code for authorization layer (Amazon Verified Permissions and Cedar policies).
+
+Resources:
+
+  PolicyStore:
+    Type: AWS::VerifiedPermissions::PolicyStore
+    Properties:
+      Schema:
+        CedarJson: |
+          {
+            "Bookstore": {
+              "actions": {
+                "View": {
+                  "appliesTo": {
+                    "resourceTypes": [
+                      "Book"
+                    ],
+                    "context": {
+                      "type": "Record",
+                      "attributes": {
+                        "region": {
+                          "required": true,
+                          "name": "region",
+                          "type": "String"
+                        }
+                      }
+                    },
+                    "principalTypes": [
+                      "User"
+                    ]
+                  },
+                  "memberOf": []
+                },
+                "ViewPremiumOffers": {
+                  "appliesTo": {
+                    "principalTypes": [
+                      "User"
+                    ],
+                    "context": {
+                      "type": "Record",
+                      "attributes": {
+                        "region": {
+                          "required": true,
+                          "type": "String",
+                          "name": "region"
+                        }
+                      }
+                    },
+                    "resourceTypes": [
+                      "Book"
+                    ]
+                  },
+                  "memberOf": []
+                }
+              },
+              "entityTypes": {
+                "Role": {
+                  "memberOfTypes": [],
+                  "shape": {
+                    "attributes": {},
+                    "type": "Record"
+                  }
+                },
+                "User": {
+                  "memberOfTypes": [
+                    "Role"
+                  ],
+                  "shape": {
+                    "type": "Record",
+                    "attributes": {
+                      "yearsAsMember": {
+                        "type": "Long",
+                        "required": false
+                      }
+                    }
+                  }
+                },
+                "Book": {
+                  "memberOfTypes": [],
+                  "shape": {
+                    "attributes": {
+                      "owner": {
+                        "type": "Entity",
+                        "required": true,
+                        "name": "User"
+                      }
+                    },
+                    "type": "Record"
+                  }
+                }
+              }
+            }
+          }
+      ValidationSettings:
+        Mode: STRICT
+
+  PolicyStoreIdSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: /bookstore-demo-app-with-authz/authorization/policy-store-id
+      Value: !Ref PolicyStore
+
+  RbacAdminStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows admins to see list all books"
+          Statement: |
+            permit(
+              principal in Bookstore::Role::"Admin",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            );
+
+  RbacAdminForbidStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Denies admin Frank to list all books"
+          Statement: |
+            forbid(
+              principal == Bookstore::User::"Frank",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            );
+
+  RbacResourceOwnerStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows publishers to see books they have published"
+          Statement: |
+            permit (
+              principal in Bookstore::Role::"Publisher",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            )
+            when {
+              principal == resource.owner
+            };
+
+  RbacExplicitStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows specific user to see a specific book"
+          Statement: |
+            permit (
+              principal == Bookstore::User::"21fccbd2-75ad-4bac-84e6-1e2cecedeab3",
+              action in [ Bookstore::Action::"View" ],
+              resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
+            );
+
+  PermitAbacStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows customers with specific value for yearsAsMember attribute to list premium offers"
+          Statement: |
+            permit (
+              principal in Bookstore::Role::"Customer",
+              action in [ Bookstore::Action::"ViewPremiumOffers" ],
+              resource
+            )
+            when { principal has yearsAsMember && principal.yearsAsMember >= 2 };
+
+  DenyAbacStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Denies customers with specific value for yearsAsMember attribute to list premium offers"
+          Statement: |
+            forbid (
+              principal in Bookstore::Role::"Customer",
+              action in [ Bookstore::Action::"ViewPremiumOffers" ],
+              resource
+            )
+            when { principal has yearsAsMember && principal.yearsAsMember < 2 };
+
+  ContextStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Denies access for users outside the US region"
+          Statement: |
+            forbid (
+              principal,
+              action in [ Bookstore::Action::"View", Bookstore::Action::"ViewPremiumOffers" ],
+              resource
+            )
+            when { context.region != "US" };
+
+Outputs:
+
+  PolicyStoreId:
+    Description: "Identifier of the Amazon Verified Permissions policy store."
+    Value: !Ref PolicyStore
