@@ -42,3 +42,4 @@ cdk.context.json
 # Local assets.
 .env.*
 *.local
+*.copy.*
