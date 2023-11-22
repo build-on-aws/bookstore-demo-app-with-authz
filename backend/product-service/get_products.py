@@ -19,8 +19,8 @@ HEADERS = {
 }
 
 POLICIES = {
-    "PUBLISHERS_VIEW": "Allows publishers to see books they have published",
-    "PUBLISHER_ACCESS_TO_ONE_BOOK": "Allows specific user to see a specific book",
+    "PUBLISHERS_VIEW": "Allows publishers to list books they have published",
+    "PUBLISHER_ACCESS_TO_ONE_BOOK": "Allows specific Publisher to list a specific book",
     "PREMIUM_OFFERS": "Allows customers with specific value for yearsAsMember attribute to list premium offers",
     "NO_PREMIUM_OFFERS": "Denies customers with specific value for yearsAsMember attribute to list premium offers",
 }
@@ -206,7 +206,7 @@ def construct_batch_authz_request(user_info):
 
                 # Here we add books that will be evaluated against publishers.
                 # In our example, each of two Publishers - Dante and William - have just one book.
-                # However, we have added new policy, that Dante can see a specific book owned by William.
+                # However, we have added new policy, that Dante can list a specific book owned by William.
 
                 get_publisher_book_entity(book_owned_by_william, "William"),
                 get_publisher_book_entity(book_owned_by_dante, "Dante")
@@ -278,8 +278,8 @@ def determine_product_list_for_publisher(responses, user_info):
         if response.get("decision") == "ALLOW":
             policy_description = get_policy_description(response)
 
-            # Check if the policy allows the publisher to see the books they have published.
-            # If not, check the other policy, if that allows a specific user to see a specific book.
+            # Check if the policy allows the publisher to list the books they have published.
+            # If not, check the other policy, if that allows a specific user to list a specific book.
             if policy_description == POLICIES["PUBLISHERS_VIEW"]:
                 allowed_books.extend([book for book in books["books"] if book["publisher"] == user_info["username"]])
             elif policy_description == POLICIES["PUBLISHER_ACCESS_TO_ONE_BOOK"]:

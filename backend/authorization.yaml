@@ -111,7 +111,7 @@ Resources:
       PolicyStoreId: !Ref PolicyStore
       Definition:
         Static:
-          Description: "Allows admins to see list all books"
+          Description: "Allows admins to list all books"
           Statement: |
             permit(
               principal in Bookstore::Role::"Admin",
@@ -139,7 +139,7 @@ Resources:
       PolicyStoreId: !Ref PolicyStore
       Definition:
         Static:
-          Description: "Allows publishers to see books they have published"
+          Description: "Allows publishers to list books they have published"
           Statement: |
             permit (
               principal in Bookstore::Role::"Publisher",
@@ -156,7 +156,7 @@ Resources:
       PolicyStoreId: !Ref PolicyStore
       Definition:
         Static:
-          Description: "Allows specific user to see a specific book"
+          Description: "Allows specific Publisher to list a specific book"
           Statement: |
             permit (
               principal == Bookstore::User::"Dante",
