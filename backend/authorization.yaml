@@ -83,6 +83,34 @@ Resources:
               resource
             );
 
+  RbacAdminForbidStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Denies admin Frank to list all books"
+          Statement: |
+            forbid (
+              principal == Bookstore::User::"Frank",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            );
+
+  RbacCustomerStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows customers to list all books"
+          Statement: |
+            permit (
+              principal in Bookstore::Role::"Customer",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            );
+
 Outputs:
 
   PolicyStoreId:
