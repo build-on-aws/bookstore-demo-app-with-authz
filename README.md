@@ -127,7 +127,7 @@ Keep in mind that there will be also one additional *Amazon S3* bucket created f
 
 ##### Clean Up
 
-Delete the AWS CloudFormation stacks created by this project. There are 4 of them, with names starting with `bookstore-demo-app-with-authz-`. Keep in mind that there will be also one additional *Amazon S3* bucket created for storing code archives, also starting with a similar name: `bookstore-demo-app-with-authz-src-`.
+Delete the AWS Amplify application and AWS CloudFormation stacks created by this project. There are 3 of them, with names starting with `bookstore-demo-app-with-authz-`.
 
 ## References
 
