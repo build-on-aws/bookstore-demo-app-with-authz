@@ -12,6 +12,52 @@ Resources:
       Schema:
         CedarJson: |
           {
+            "Bookstore": {
+              "actions": {
+                "View": {
+                  "appliesTo": {
+                    "resourceTypes": [
+                      "Book"
+                    ],
+                    "principalTypes": [
+                      "User"
+                    ]
+                  },
+                  "memberOf": []
+                }
+              },
+              "entityTypes": {
+                "Role": {
+                  "memberOfTypes": [],
+                  "shape": {
+                    "type": "Record",
+                    "attributes": {}
+                  }
+                },
+                "User": {
+                  "memberOfTypes": [
+                    "Role"
+                  ],
+                  "shape": {
+                    "type": "Record",
+                    "attributes": {}
+                  }
+                },
+                "Book": {
+                  "memberOfTypes": [],
+                  "shape": {
+                    "attributes": {
+                      "owner": {
+                        "type": "Entity",
+                        "required": true,
+                        "name": "User"
+                      }
+                    },
+                    "type": "Record"
+                  }
+                }
+              }
+            }
           }
       ValidationSettings:
         Mode: STRICT
@@ -22,6 +68,20 @@ Resources:
       Type: String
       Name: /bookstore-demo-app-with-authz/authorization/policy-store-id
       Value: !Ref PolicyStore
+
+  RbacAdminStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows admins to list all books"
+          Statement: |
+            permit (
+              principal in Bookstore::Role::"Admin",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            );
 
 Outputs:
 
