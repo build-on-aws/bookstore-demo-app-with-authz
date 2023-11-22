@@ -113,7 +113,7 @@ Resources:
         Static:
           Description: "Allows admins to list all books"
           Statement: |
-            permit(
+            permit (
               principal in Bookstore::Role::"Admin",
               action in [ Bookstore::Action::"View" ],
               resource
@@ -127,7 +127,7 @@ Resources:
         Static:
           Description: "Denies admin Frank to list all books"
           Statement: |
-            forbid(
+            forbid (
               principal == Bookstore::User::"Frank",
               action in [ Bookstore::Action::"View" ],
               resource

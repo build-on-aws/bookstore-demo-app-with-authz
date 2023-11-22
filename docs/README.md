@@ -138,7 +138,7 @@ We have crafted several scenarios to demonstrate the capabilities of our authori
 - **Policy Name:** `RbacAdminStaticPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
-  permit(
+  permit (
     principal in Bookstore::Role::"Admin",
     action in [Bookstore::Action::"View"],
     resource
@@ -216,7 +216,7 @@ Tom is associated with the 'Admin' role. This role is crucial in determining his
 - **Policy Name:** `ExplicitDenyAdminFrankPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
-  forbid(
+  forbid (
     principal == Bookstore::User::"Frank",
     action in [Bookstore::Action::"View"],
     resource
@@ -294,7 +294,7 @@ In this scenario, the explicit deny policy for Frank takes precedence, showcasin
 - **Policy Name:** `ContextStaticPolicy` (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
-  forbid(
+  forbid (
     principal,
     action in [Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers"],
     resource
@@ -464,7 +464,7 @@ In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribut
 - **Policy Name:** DenyAbacStaticPolicy (in `authorization.yaml` file)
 - **Definition:**
   ```cedar
-  forbid(
+  forbid (
     principal in Bookstore::Role::"Customer",
     action in [Bookstore::Action::"ViewWithPremiumOffers"],
     resource
@@ -562,7 +562,7 @@ In this scenario, Susan's role as a 'Customer' and her 'yearsAsMember' attribute
 2. **Policy Name:** `RbacExplicitStaticPolicy` (in `authorization.yaml` file)
    **Definition:**
    ```cedar
-   permit(
+   permit (
      principal == Bookstore::User::"Dante",
      action in [ Bookstore::Action::"View" ],
      resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"

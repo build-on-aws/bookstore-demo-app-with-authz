@@ -1,6 +1,6 @@
 // Scenario 1: Scenario 1: Admin Access (RBAC)
 
-permit(
+permit (
   principal in Bookstore::Role::"Admin",
   action in [ Bookstore::Action::"View" ],
   resource
@@ -8,7 +8,7 @@ permit(
 
 // Scenario 2: Explicit Deny for Admin User 'Frank' (RBAC)
 
-forbid(
+forbid (
   principal == Bookstore::User::"Frank",
   action in [ Bookstore::Action::"View" ],
   resource
