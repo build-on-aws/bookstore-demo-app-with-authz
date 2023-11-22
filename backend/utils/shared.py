@@ -36,7 +36,7 @@ def get_user_claims(jwt_token: str, source_ip: str) -> dict:
 def map_ip_to_region(ip_address: str, username: str) -> str:
     """
     Naively maps an IP address to a country code based on the username.
-    Returns 'UK' if the username is 'Toby', otherwise defaults to 'US'.
+    Returns "UK" if the username is "Toby", otherwise defaults to "US".
     """
     if username == "Toby":
         return "UK"

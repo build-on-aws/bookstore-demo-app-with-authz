@@ -35,7 +35,7 @@ Resources:
                   },
                   "memberOf": []
                 },
-                "ViewPremiumOffers": {
+                "ViewWithPremiumOffers": {
                   "appliesTo": {
                     "principalTypes": [
                       "User"
@@ -174,7 +174,7 @@ Resources:
           Statement: |
             permit (
               principal in Bookstore::Role::"Customer",
-              action in [ Bookstore::Action::"ViewPremiumOffers" ],
+              action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
               resource
             )
             when { principal has yearsAsMember && principal.yearsAsMember >= 2 };
@@ -189,7 +189,7 @@ Resources:
           Statement: |
             forbid (
               principal in Bookstore::Role::"Customer",
-              action in [ Bookstore::Action::"ViewPremiumOffers" ],
+              action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
               resource
             )
             when { principal has yearsAsMember && principal.yearsAsMember < 2 };
@@ -204,7 +204,7 @@ Resources:
           Statement: |
             forbid (
               principal,
-              action in [ Bookstore::Action::"View", Bookstore::Action::"ViewPremiumOffers" ],
+              action in [ Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers" ],
               resource
             )
             when { context.region != "US" };

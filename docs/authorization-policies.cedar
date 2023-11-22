@@ -33,7 +33,7 @@ permit (
 
 permit (
   principal in Bookstore::Role::"Customer",
-  action in [ Bookstore::Action::"ViewPremiumOffers" ],
+  action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
   resource
 )
 when {
@@ -42,7 +42,7 @@ when {
 
 forbid (
   principal in Bookstore::Role::"Customer",
-  action in [ Bookstore::Action::"ViewPremiumOffers" ],
+  action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
   resource
 )
 when {
@@ -51,7 +51,7 @@ when {
 
 forbid (
   principal,
-  action in [ Bookstore::Action::"View", Bookstore::Action::"ViewPremiumOffers" ],
+  action in [ Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers" ],
   resource
 )
 when {

@@ -1,10 +1,10 @@
 # Introduction to authorization scenarios with Amazon Verified Permissions
 
-In our bookstore application, you will see integrated a non-trivial authorization system using Amazon Verified Permissions (AVP). This system enhances our application's security and flexibility by managing user access to various resources and features.
+In our bookstore application, you will see integrated a non-trivial authorization system using **Amazon Verified Permissions (AVP)**. This system enhances our application's security and flexibility by managing user access to various resources and features.
 
 ## Overview of Amazon Verified Permissions Integration
 
-Amazon Verified Permissions operates on a default "deny all" basis. This means that unless a policy explicitly allows an action, it is denied by default. This approach ensures maximum security, as access is restricted unless specifically granted.
+_Amazon Verified Permissions (AVP)_ operates on a default "deny all" basis. This means that unless a policy explicitly allows an action, it is denied by default. This approach ensures maximum security, as access is restricted unless specifically granted.
 
 AVP provides a robust framework for defining and enforcing access control policies. Key components of our integration include:
 
@@ -27,7 +27,7 @@ The authorization schema in Amazon Verified Permissions (AVP) defines the struct
     "Bookstore": {
         "actions": {
             "View": { ... },
-            "ViewPremiumOffers": { ... }
+            "ViewWithPremiumOffers": { ... }
         },
         "entityTypes": {
             "User": { ... },
@@ -40,39 +40,65 @@ The authorization schema in Amazon Verified Permissions (AVP) defines the struct
 
 ## Actions
 
+Authorization in this example will cover _2 granular actions_ related to listing products:
+
 - **View**: This action allows users to view books. It applies to the 'Book' resource type and requires a 'region' context attribute.
-- **ViewPremiumOffers**: Similar to 'View', but specifically for viewing premium offers. It also requires a 'region' context attribute.
+- **ViewWithPremiumOffers**: Similar to 'View', but specifically for viewing premium offers. It also requires a 'region' context attribute.
 
 ## Entity Types
 
-- **User**: Represents an individual user. It includes an optional attribute 'yearsAsMember' to track the duration of membership.
+In this application, there are _3 entities_:
+
 - **Role**: Defines different roles within the system, like 'Admin', 'Customer', or 'Publisher'.
+- **User**: Represents an individual user. It includes an optional attribute 'yearsAsMember' to track the duration of membership.
 - **Book**: Represents a book entity. It includes an 'owner' attribute, linking to a 'User' entity.
 
-### Users
-
-To execute all prepared scenarios, please create a following set of users:
-
-| User Name | Role      | Years as Member | Password                   | Email                 |
-| --------- | --------- | --------------- |----------------------------|-----------------------|
-| Tom       | Admin     | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
-| Frank     | Admin     | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
-| Dante     | Publisher | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
-| Andrew    | Customer  | 3               | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
-| Susan     | Customer  | 1               | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
-| Toby      | Customer  | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
-
-Keep in mind to use a valid email address for each user, as they need to provide a verification code that will be sent after signing up by *Amazon Cognito*.
-
 ### Roles
+
+In this example, you can associate user to one of _3 available roles_:
 
 - **Admin**: People that have administrative privileges. _TL;DR_: they can see _EVERYTHING_.
 - **Publisher**: People that can list books which they were published by them.
 - **Customer**: People that can list the books depending on how long they are customers of our bookstore (loyal customer will have access to premium offers).
 
+### Users
+
+In the scenarios described below there is a diverse set of _7 users_:
+
+  | User Name | Role      | Years as Member | Password                   | Email                 |
+  |-----------| --------- | --------------- |----------------------------|-----------------------|
+  | Tom       | Admin     | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+  | Frank     | Admin     | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+  | Dante     | Publisher | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+  | William   | Publisher | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+  | Andrew    | Customer  | 3               | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+  | Susan     | Customer  | 1               | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+  | Toby      | Customer  | Any value       | <PUT_HERE_A_SAFE_PASSWORD> | <PUT_HERE_REAL_EMAIL> |
+
+Keep in mind to use a valid email address for each user, as they need to provide a verification code that will be sent after signing up by *Amazon Cognito*.
+
+### Books
+
+In the provided example, you will be able to list _12 books_ - if authenticated user, will be able to list all of them. Here you can evaluate the schema and available fields:
+
+```json
+{
+  "id": "4c1fadaa-213a-4ea8-aa32-58c217604e3c",
+  "publisher": "Antony",
+  "name": "Starlit Paths Untraveled",
+  "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ...",
+  "category": "Fantasy",
+  "createdDate": "2017-04-17T01:14:03 -02:00",
+  "premiumOffer": true,
+  "price": 716
+}
+```
+
 ## Context
 
-- **Region**: A required attribute in the context of both 'View' and 'ViewPremiumOffers' actions. It ensures that the user's region is considered during authorization, which can be crucial for region-specific access control.
+There is an additional part available for all entities in a form of a dictionary with specific attributes. In this example, you can see that there is one attribute used:
+
+- **Region**: A required attribute in the context of both 'View' and 'ViewWithPremiumOffers' actions. It ensures that the user's region will be considered during authorization (e.g., for region-specific access control).
 
 ## Purpose of the Schema
 
@@ -125,7 +151,7 @@ We have crafted several scenarios to demonstrate the capabilities of our authori
 - **Outcome:** The AdminUser will have access to view all books in the bookstore, including regular and premium offers.
 - **Rationale:** Since the Admin role is granted full access to view all books through the RbacAdminStaticPolicy, the AdminUser will see the complete list of books without any restrictions.
 
-### Understanding the Authorization Request for Admin User 'Tom'
+#### Understanding the Authorization Request for Admin User 'Tom'
 
 The authorization request for the user 'Tom' with the role 'Admin' is structured to determine his access rights within the bookstore application. Here's a breakdown of the request:
 
@@ -203,7 +229,7 @@ Tom is associated with the 'Admin' role. This role is crucial in determining his
 - **Outcome:** Admin User Frank will be denied access to view any books in the bookstore.
 - **Rationale:** Despite having an Admin role, the ExplicitDenyAdminFrankPolicy specifically denies Frank from viewing books. This scenario demonstrates the precedence of explicit deny policies over allow policies in access control.
 
-### Understanding the Authorization Request for Admin User 'Frank'
+#### Understanding the Authorization Request for Admin User 'Frank'
 
 The authorization request for the user 'Frank' with the role 'Admin' is structured to determine his access rights within the bookstore application. Here's a breakdown of the request:
 
@@ -253,7 +279,7 @@ The authorization request for the user 'Frank' with the role 'Admin' is structur
 
 In this scenario, the explicit deny policy for Frank takes precedence, showcasing the power and flexibility of fine-grained access control in AVP. Despite his Admin role, Frank's access to view books is explicitly denied, illustrating the importance of specific policy definitions in access management.
 
-### Scenario 3: Publisher Resource Owner - User Dante: Bulk Authorization
+### Scenario 3: Publisher Resource Owner - Users Dante and William (Bulk Authorization)
 
 #### User Requirement
 
@@ -294,7 +320,7 @@ In this scenario, the explicit deny policy for Frank takes precedence, showcasin
 - **Outcome:** Publisher Dante will have access to view the specific books that he has published, as well as the book explicitly specified in the second policy.
 - **Rationale:** The combined policies grant Dante, as a publisher, the right to view his own published books and a specific book identified by its unique resource identifier. This scenario demonstrates role-based access control combined with resource ownership and explicit resource identification.
 
-### Bulk Authorization for Publisher User 'Dante'
+#### Bulk Authorization for Publisher User 'Dante'
 
 In this scenario, we implement bulk authorization to efficiently handle multiple authorization requests for Dante. Bulk authorization allows us to process several authorization checks in a single request, enhancing performance and scalability.
 
@@ -407,7 +433,9 @@ Bulk authorization is a method of processing multiple authorization requests sim
 }
 ```
 
-### Scenario 4: ABAC - Loyal Customer Access to Premium Offers Part I
+However, if you log in as another Publisher - _William_ - you will see just one book, owned by that particular publisher.
+
+### Scenario 4: ABAC - Loyal Customer Access to Premium Offers (Part I)
 
 #### User Requirement
 
@@ -424,7 +452,7 @@ Bulk authorization is a method of processing multiple authorization requests sim
   ```cedar
   permit (
     principal in Bookstore::Role::"Customer",
-    action in [Bookstore::Action::"ViewPremiumOffers"],
+    action in [Bookstore::Action::"ViewWithPremiumOffers"],
     resource
   )
   when {
@@ -438,7 +466,7 @@ Bulk authorization is a method of processing multiple authorization requests sim
 - **Outcome:** Andrew, as a loyal customer with 3 years of membership, will have access to view both regular books and books with premium offers.
 - **Rationale:** The policy specifically targets customers with a membership duration of 2 or more years, granting them additional privileges to view premium offers. Andrew's membership duration of 3 years qualifies him for this access.
 
-### Understanding the Authorization Request for Customer 'Andrew'
+#### Understanding the Authorization Request for Customer 'Andrew'
 
 The authorization request for Andrew is designed to evaluate his eligibility for viewing premium offers based on his membership duration.
 
@@ -453,7 +481,7 @@ The authorization request for Andrew is designed to evaluate his eligibility for
   },
   "action": {
     "actionType": "Bookstore::Action",
-    "actionId": "ViewPremiumOffers"
+    "actionId": "ViewWithPremiumOffers"
   },
   "resource": {
     "entityType": "Bookstore::Book",
@@ -492,92 +520,7 @@ The authorization request for Andrew is designed to evaluate his eligibility for
 
 In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribute are key factors in determining his access rights. The ABAC approach allows for a more dynamic and flexible access control mechanism, adapting to the attributes of individual users.
 
-### ### Scenario 4: ABAC - Loyal Customer Access to Premium Offers Part I
-
-#### User Requirement
-
-- **User Name:** Andrew
-- **Cognito Attributes:**
-  - **Role:** Customer
-  - **Years as Member:** 3
-  - **Location:** United States (USA)
-
-#### Relevant AVP Policy
-
-- **Policy Name:** `PermitAbacStaticPolicy` (in `authorization.yaml` file)
-- **Definition:**
-  ```cedar
-  permit (
-    principal in Bookstore::Role::"Customer",
-    action in [Bookstore::Action::"ViewPremiumOffers"],
-    resource
-  )
-  when {
-    principal has yearsAsMember && principal.yearsAsMember >= 2
-  };
-  ```
-- **Description:** This policy allows customers who have been members for 2 or more years to view premium offers on books. It leverages the `yearsAsMember` attribute for Attribute-Based Access Control (ABAC).
-
-#### Expected Data Visibility
-
-- **Outcome:** Andrew, as a loyal customer with 3 years of membership, will have access to view both regular books and books with premium offers.
-- **Rationale:** The policy specifically targets customers with a membership duration of 2 or more years, granting them additional privileges to view premium offers. Andrew's membership duration of 3 years qualifies him for this access.
-
-### Understanding the Authorization Request for Customer 'Andrew'
-
-The authorization request for Andrew is designed to evaluate his eligibility for viewing premium offers based on his membership duration.
-
-#### Authorization Request Details
-
-```json
-{
-  "policyStoreId": "YOUR_POLICY_STORE",
-  "principal": {
-    "entityType": "Bookstore::User",
-    "entityId": "Andrew"
-  },
-  "action": {
-    "actionType": "Bookstore::Action",
-    "actionId": "ViewPremiumOffers"
-  },
-  "resource": {
-    "entityType": "Bookstore::Book",
-    "entityId": "*"
-  },
-  "entities": {
-    "entityList": [
-      {
-        "identifier": {
-          "entityType": "Bookstore::User",
-          "entityId": "Andrew"
-        },
-        "attributes": {
-          "yearsAsMember": {
-            "long": 3
-          }
-        },
-        "parents": [
-          {
-            "entityType": "Bookstore::Role",
-            "entityId": "Customer"
-          }
-        ]
-      }
-    ]
-  },
-  "context": {
-    "contextMap": {
-      "region": {
-        "string": "US"
-      }
-    }
-  }
-}
-```
-
-In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribute are key factors in determining his access rights. The ABAC approach allows for a more dynamic and flexible access control mechanism, adapting to the attributes of individual users.
-
-## Scenario 4: ABAC - Loyal Customer Access to Premium Offers (Part II)
+### Scenario 4: ABAC - Loyal Customer Access to Premium Offers (Part II)
 
 #### User Requirement
 
@@ -594,7 +537,7 @@ In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribut
   ```cedar
   forbid(
     principal in Bookstore::Role::"Customer",
-    action in [Bookstore::Action::"ViewPremiumOffers"],
+    action in [Bookstore::Action::"ViewWithPremiumOffers"],
     resource
   )
   when {
@@ -608,7 +551,7 @@ In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribut
 - **Outcome:** Susan, as a new customer with only 1 year of membership, will not have access to view premium offers on books. However, she can still view regular books and offers.
 - **Rationale:** The policy is designed to restrict access to premium offers for customers with less than 2 years of membership. Susan's membership duration of 1 year falls below this threshold, hence denying her access to premium offers.
 
-### Understanding the Authorization Request for Customer 'Susan'
+#### Understanding the Authorization Request for Customer 'Susan'
 
 The authorization request for Susan assesses her eligibility for viewing premium offers based on her membership duration.
 
@@ -623,7 +566,7 @@ The authorization request for Susan assesses her eligibility for viewing premium
   },
   "action": {
     "actionType": "Bookstore::Action",
-    "actionId": "ViewPremiumOffers"
+    "actionId": "ViewWithPremiumOffers"
   },
   "resource": {
     "entityType": "Bookstore::Book",
@@ -679,7 +622,7 @@ In this scenario, Susan's role as a 'Customer' and her 'yearsAsMember' attribute
   ```cedar
   forbid(
     principal,
-    action in [Bookstore::Action::"View", Bookstore::Action::"ViewPremiumOffers"],
+    action in [Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers"],
     resource
   )
   when {
@@ -693,7 +636,7 @@ In this scenario, Susan's role as a 'Customer' and her 'yearsAsMember' attribute
 - **Outcome:** Toby, being located in the UK, will be denied access to view both regular and premium book offers in the bookstore.
 - **Rationale:** The policy explicitly restricts access to users outside the US. Since Toby's location is identified as the UK, he falls under the restriction and is thus denied access.
 
-### Understanding the Authorization Request for User 'Toby'
+#### Understanding the Authorization Request for User 'Toby'
 
 The authorization request for Toby is structured to assess his access rights based on his geographical location.
 
@@ -708,7 +651,7 @@ The authorization request for Toby is structured to assess his access rights bas
   },
   "action": {
     "actionType": "Bookstore::Action",
-    "actionId": "ViewPremiumOffers"
+    "actionId": "ViewWithPremiumOffers"
   },
   "resource": {
     "entityType": "Bookstore::Book",

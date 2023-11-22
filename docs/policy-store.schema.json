@@ -22,7 +22,7 @@
         },
         "memberOf": []
       },
-      "ViewPremiumOffers": {
+      "ViewWithPremiumOffers": {
         "appliesTo": {
           "principalTypes": [
             "User"

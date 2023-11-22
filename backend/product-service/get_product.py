@@ -5,7 +5,7 @@ from aws_lambda_powertools import Logger, Tracer
 logger = Logger()
 tracer = Tracer()
 
-with open('database.json', 'r') as database:
+with open("database.json", "r") as database:
     books = json.load(database)
 
 HEADERS = {
