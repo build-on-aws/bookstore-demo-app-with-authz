@@ -158,7 +158,7 @@ def determine_product_list(response, user_info):
 
             return []  # Return an empty list for denied access.
 
-    return books["books"]  # Return all books if no specific policy applies.
+    return []
 
 
 def handle_batch_is_authorized(user_info):
