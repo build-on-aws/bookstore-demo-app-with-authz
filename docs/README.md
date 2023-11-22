@@ -79,7 +79,7 @@ Keep in mind to use a valid email address for each user, as they need to provide
 
 ### Books
 
-In the provided example, you will be able to list _12 books_ - if authenticated user, will be able to list all of them. Here you can evaluate the schema and available fields:
+In the provided example, you will be able to list maximally _12 books_ - assuming that an authenticated user is permitted to list all of them. Here you can evaluate the schema and available fields for this kind of entity:
 
 ```json
 {
