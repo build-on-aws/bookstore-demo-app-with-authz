@@ -61,8 +61,8 @@ Resources:
                 "Role": {
                   "memberOfTypes": [],
                   "shape": {
-                    "attributes": {},
-                    "type": "Record"
+                    "type": "Record",
+                    "attributes": {}
                   }
                 },
                 "User": {

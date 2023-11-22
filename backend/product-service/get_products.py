@@ -148,7 +148,7 @@ def determine_product_list(response, user_info):
             # If allowed and not a publisher, return all books including premium offers.
             return books["books"]
         elif response["decision"] == "DENY":
-            # Handle the deny decision for customers.
+            # Handle the deny decision for customers that should not see premium offers.
             if user_info["role"] == "Customer":
                 policy_description = get_policy_description(response)
 
