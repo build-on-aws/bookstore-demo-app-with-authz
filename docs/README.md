@@ -123,7 +123,7 @@ We have crafted several scenarios to demonstrate the capabilities of our authori
 - **Explicit Permissions:** Granting specific users access to particular resources.
 - **Contextual Restrictions:** Implementing access control based on contextual information like user location.
 
-### Scenario 1: RBAC - Admin Access
+### Scenario 1: Admin Access (RBAC)
 
 #### User Requirement
 
@@ -279,7 +279,262 @@ The authorization request for the user 'Frank' with the role 'Admin' is structur
 
 In this scenario, the explicit deny policy for Frank takes precedence, showcasing the power and flexibility of fine-grained access control in AVP. Despite his Admin role, Frank's access to view books is explicitly denied, illustrating the importance of specific policy definitions in access management.
 
-### Scenario 3: Publisher Resource Owner - Users Dante and William (Bulk Authorization)
+### Scenario 3: Regional Restriction (Context-Based Access Control)
+
+#### User Requirement
+
+- **User Name:** Toby
+- **Cognito Attributes:**
+  - **Role:** Customer
+  - **Years as Member:** Not important for this scenario
+  - **Location:** United Kingdom (UK)
+
+#### Relevant AVP Policy
+
+- **Policy Name:** `ContextStaticPolicy` (in `authorization.yaml` file)
+- **Definition:**
+  ```cedar
+  forbid(
+    principal,
+    action in [Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers"],
+    resource
+  )
+  when {
+    context.region != "US"
+  };
+  ```
+- **Description:** This policy denies access to viewing books and premium offers for users located outside the United States. It utilizes the region context attribute, which is derived from the user's IP address, to enforce regional access restrictions.
+
+#### Expected Data Visibility
+
+- **Outcome:** Toby, being located in the UK, will be denied access to view both regular and premium book offers in the bookstore.
+- **Rationale:** The policy explicitly restricts access to users outside the US. Since Toby's location is identified as the UK, he falls under the restriction and is thus denied access.
+
+#### Understanding the Authorization Request for User 'Toby'
+
+The authorization request for Toby is structured to assess his access rights based on his geographical location.
+
+#### Authorization Request Details
+
+```json
+{
+  "policyStoreId": "YOUR_POLICY_STORE_ID",
+  "principal": {
+    "entityType": "Bookstore::User",
+    "entityId": "Toby"
+  },
+  "action": {
+    "actionType": "Bookstore::Action",
+    "actionId": "ViewWithPremiumOffers"
+  },
+  "resource": {
+    "entityType": "Bookstore::Book",
+    "entityId": "*"
+  },
+  "entities": {
+    "entityList": [
+      {
+        "identifier": {
+          "entityType": "Bookstore::User",
+          "entityId": "Toby"
+        },
+        "attributes": {
+          "yearsAsMember": {
+            "long": 4
+          }
+        },
+        "parents": [
+          {
+            "entityType": "Bookstore::Role",
+            "entityId": "Customer"
+          }
+        ]
+      }
+    ]
+  },
+  "context": {
+    "contextMap": {
+      "region": {
+        "string": "UK"
+      }
+    }
+  }
+}
+```
+
+In this scenario, the region context attribute plays a pivotal role. Despite Toby's role and membership duration, his location outside the US leads to the denial of access to the bookstore's offerings. This demonstrates the power of context-based access control in enforcing location-specific policies.
+
+### Scenario 4: Loyal Customer Access to Premium Offers (ABAC - Part I)
+
+#### User Requirement
+
+- **User Name:** Andrew
+- **Cognito Attributes:**
+  - **Role:** Customer
+  - **Years as Member:** 3
+  - **Location:** United States (USA)
+
+#### Relevant AVP Policy
+
+- **Policy Name:** `PermitAbacStaticPolicy` (in `authorization.yaml` file)
+- **Definition:**
+  ```cedar
+  permit (
+    principal in Bookstore::Role::"Customer",
+    action in [Bookstore::Action::"ViewWithPremiumOffers"],
+    resource
+  )
+  when {
+    principal has yearsAsMember && principal.yearsAsMember >= 2
+  };
+  ```
+- **Description:** This policy allows customers who have been members for 2 or more years to view premium offers on books. It leverages the `yearsAsMember` attribute for Attribute-Based Access Control (ABAC).
+
+#### Expected Data Visibility
+
+- **Outcome:** Andrew, as a loyal customer with 3 years of membership, will have access to view both regular books and books with premium offers.
+- **Rationale:** The policy specifically targets customers with a membership duration of 2 or more years, granting them additional privileges to view premium offers. Andrew's membership duration of 3 years qualifies him for this access.
+
+#### Understanding the Authorization Request for Customer 'Andrew'
+
+The authorization request for Andrew is designed to evaluate his eligibility for viewing premium offers based on his membership duration.
+
+#### Authorization Request Details
+
+```json
+{
+  "policyStoreId": "YOUR_POLICY_STORE",
+  "principal": {
+    "entityType": "Bookstore::User",
+    "entityId": "Andrew"
+  },
+  "action": {
+    "actionType": "Bookstore::Action",
+    "actionId": "ViewWithPremiumOffers"
+  },
+  "resource": {
+    "entityType": "Bookstore::Book",
+    "entityId": "*"
+  },
+  "entities": {
+    "entityList": [
+      {
+        "identifier": {
+          "entityType": "Bookstore::User",
+          "entityId": "Andrew"
+        },
+        "attributes": {
+          "yearsAsMember": {
+            "long": 3
+          }
+        },
+        "parents": [
+          {
+            "entityType": "Bookstore::Role",
+            "entityId": "Customer"
+          }
+        ]
+      }
+    ]
+  },
+  "context": {
+    "contextMap": {
+      "region": {
+        "string": "US"
+      }
+    }
+  }
+}
+```
+
+In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribute are key factors in determining his access rights. The ABAC approach allows for a more dynamic and flexible access control mechanism, adapting to the attributes of individual users.
+
+### Scenario 4: Loyal Customer Access to Premium Offers (ABAC - Part II)
+
+#### User Requirement
+
+- **User Name:** Susan
+- **Cognito Attributes:**
+  - **Role:** Customer
+  - **Years as Member:** 1
+  - **Location:** United States (USA)
+
+#### Relevant AVP Policy
+
+- **Policy Name:** DenyAbacStaticPolicy (in `authorization.yaml` file)
+- **Definition:**
+  ```cedar
+  forbid(
+    principal in Bookstore::Role::"Customer",
+    action in [Bookstore::Action::"ViewWithPremiumOffers"],
+    resource
+  )
+  when {
+    principal has yearsAsMember && principal.yearsAsMember < 2
+  };
+  ```
+- **Description:** This policy denies customers who have been members for less than 2 years the ability to view premium offers on books. It uses the `yearsAsMember` attribute for Attribute-Based Access Control (ABAC).
+
+#### Expected Data Visibility
+
+- **Outcome:** Susan, as a new customer with only 1 year of membership, will not have access to view premium offers on books. However, she can still view regular books and offers.
+- **Rationale:** The policy is designed to restrict access to premium offers for customers with less than 2 years of membership. Susan's membership duration of 1 year falls below this threshold, hence denying her access to premium offers.
+
+#### Understanding the Authorization Request for Customer 'Susan'
+
+The authorization request for Susan assesses her eligibility for viewing premium offers based on her membership duration.
+
+#### Authorization Request Details
+
+```json
+{
+  "policyStoreId": "YOUR_POLICY_STORE_ID",
+  "principal": {
+    "entityType": "Bookstore::User",
+    "entityId": "Susan"
+  },
+  "action": {
+    "actionType": "Bookstore::Action",
+    "actionId": "ViewWithPremiumOffers"
+  },
+  "resource": {
+    "entityType": "Bookstore::Book",
+    "entityId": "*"
+  },
+  "entities": {
+    "entityList": [
+      {
+        "identifier": {
+          "entityType": "Bookstore::User",
+          "entityId": "Susan"
+        },
+        "attributes": {
+          "yearsAsMember": {
+            "long": 1
+          }
+        },
+        "parents": [
+          {
+            "entityType": "Bookstore::Role",
+            "entityId": "Customer"
+          }
+        ]
+      }
+    ]
+  },
+  "context": {
+    "contextMap": {
+      "region": {
+        "string": "US"
+      }
+    }
+  }
+}
+```
+
+In this scenario, Susan's role as a 'Customer' and her 'yearsAsMember' attribute are crucial in determining her access rights. The ABAC approach allows for nuanced access control, where attributes like membership duration directly influence the level of access granted to users.
+
+### Scenario 5: Publisher Resource Owner - Users Dante and William (Bulk Authorization)
 
 #### User Requirement
 
@@ -434,258 +689,3 @@ Bulk authorization is a method of processing multiple authorization requests sim
 ```
 
 However, if you log in as another Publisher - _William_ - you will see just one book, owned by that particular publisher.
-
-### Scenario 4: ABAC - Loyal Customer Access to Premium Offers (Part I)
-
-#### User Requirement
-
-- **User Name:** Andrew
-- **Cognito Attributes:**
-  - **Role:** Customer
-  - **Years as Member:** 3
-  - **Location:** United States (USA)
-
-#### Relevant AVP Policy
-
-- **Policy Name:** `PermitAbacStaticPolicy` (in `authorization.yaml` file)
-- **Definition:**
-  ```cedar
-  permit (
-    principal in Bookstore::Role::"Customer",
-    action in [Bookstore::Action::"ViewWithPremiumOffers"],
-    resource
-  )
-  when {
-    principal has yearsAsMember && principal.yearsAsMember >= 2
-  };
-  ```
-- **Description:** This policy allows customers who have been members for 2 or more years to view premium offers on books. It leverages the `yearsAsMember` attribute for Attribute-Based Access Control (ABAC).
-
-#### Expected Data Visibility
-
-- **Outcome:** Andrew, as a loyal customer with 3 years of membership, will have access to view both regular books and books with premium offers.
-- **Rationale:** The policy specifically targets customers with a membership duration of 2 or more years, granting them additional privileges to view premium offers. Andrew's membership duration of 3 years qualifies him for this access.
-
-#### Understanding the Authorization Request for Customer 'Andrew'
-
-The authorization request for Andrew is designed to evaluate his eligibility for viewing premium offers based on his membership duration.
-
-#### Authorization Request Details
-
-```json
-{
-  "policyStoreId": "YOUR_POLICY_STORE",
-  "principal": {
-    "entityType": "Bookstore::User",
-    "entityId": "Andrew"
-  },
-  "action": {
-    "actionType": "Bookstore::Action",
-    "actionId": "ViewWithPremiumOffers"
-  },
-  "resource": {
-    "entityType": "Bookstore::Book",
-    "entityId": "*"
-  },
-  "entities": {
-    "entityList": [
-      {
-        "identifier": {
-          "entityType": "Bookstore::User",
-          "entityId": "Andrew"
-        },
-        "attributes": {
-          "yearsAsMember": {
-            "long": 3
-          }
-        },
-        "parents": [
-          {
-            "entityType": "Bookstore::Role",
-            "entityId": "Customer"
-          }
-        ]
-      }
-    ]
-  },
-  "context": {
-    "contextMap": {
-      "region": {
-        "string": "US"
-      }
-    }
-  }
-}
-```
-
-In this scenario, Andrew's role as a 'Customer' and his 'yearsAsMember' attribute are key factors in determining his access rights. The ABAC approach allows for a more dynamic and flexible access control mechanism, adapting to the attributes of individual users.
-
-### Scenario 4: ABAC - Loyal Customer Access to Premium Offers (Part II)
-
-#### User Requirement
-
-- **User Name:** Susan
-- **Cognito Attributes:**
-  - **Role:** Customer
-  - **Years as Member:** 1
-  - **Location:** United States (USA)
-
-#### Relevant AVP Policy
-
-- **Policy Name:** DenyAbacStaticPolicy (in `authorization.yaml` file)
-- **Definition:**
-  ```cedar
-  forbid(
-    principal in Bookstore::Role::"Customer",
-    action in [Bookstore::Action::"ViewWithPremiumOffers"],
-    resource
-  )
-  when {
-    principal has yearsAsMember && principal.yearsAsMember < 2
-  };
-  ```
-- **Description:** This policy denies customers who have been members for less than 2 years the ability to view premium offers on books. It uses the `yearsAsMember` attribute for Attribute-Based Access Control (ABAC).
-
-#### Expected Data Visibility
-
-- **Outcome:** Susan, as a new customer with only 1 year of membership, will not have access to view premium offers on books. However, she can still view regular books and offers.
-- **Rationale:** The policy is designed to restrict access to premium offers for customers with less than 2 years of membership. Susan's membership duration of 1 year falls below this threshold, hence denying her access to premium offers.
-
-#### Understanding the Authorization Request for Customer 'Susan'
-
-The authorization request for Susan assesses her eligibility for viewing premium offers based on her membership duration.
-
-#### Authorization Request Details
-
-```json
-{
-  "policyStoreId": "YOUR_POLICY_STORE_ID",
-  "principal": {
-    "entityType": "Bookstore::User",
-    "entityId": "Susan"
-  },
-  "action": {
-    "actionType": "Bookstore::Action",
-    "actionId": "ViewWithPremiumOffers"
-  },
-  "resource": {
-    "entityType": "Bookstore::Book",
-    "entityId": "*"
-  },
-  "entities": {
-    "entityList": [
-      {
-        "identifier": {
-          "entityType": "Bookstore::User",
-          "entityId": "Susan"
-        },
-        "attributes": {
-          "yearsAsMember": {
-            "long": 1
-          }
-        },
-        "parents": [
-          {
-            "entityType": "Bookstore::Role",
-            "entityId": "Customer"
-          }
-        ]
-      }
-    ]
-  },
-  "context": {
-    "contextMap": {
-      "region": {
-        "string": "US"
-      }
-    }
-  }
-}
-```
-
-In this scenario, Susan's role as a 'Customer' and her 'yearsAsMember' attribute are crucial in determining her access rights. The ABAC approach allows for nuanced access control, where attributes like membership duration directly influence the level of access granted to users.
-
-### Scenario 5: Context-Based Access Control - Regional Restriction
-
-#### User Requirement
-
-- **User Name:** Toby
-- **Cognito Attributes:**
-  - **Role:** Customer
-  - **Years as Member:** Not important for this scenario
-  - **Location:** United Kingdom (UK)
-
-#### Relevant AVP Policy
-
-- **Policy Name:** `ContextStaticPolicy` (in `authorization.yaml` file)
-- **Definition:**
-  ```cedar
-  forbid(
-    principal,
-    action in [Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers"],
-    resource
-  )
-  when {
-    context.region != "US"
-  };
-  ```
-- **Description:** This policy denies access to viewing books and premium offers for users located outside the United States. It utilizes the region context attribute, which is derived from the user's IP address, to enforce regional access restrictions.
-
-#### Expected Data Visibility
-
-- **Outcome:** Toby, being located in the UK, will be denied access to view both regular and premium book offers in the bookstore.
-- **Rationale:** The policy explicitly restricts access to users outside the US. Since Toby's location is identified as the UK, he falls under the restriction and is thus denied access.
-
-#### Understanding the Authorization Request for User 'Toby'
-
-The authorization request for Toby is structured to assess his access rights based on his geographical location.
-
-#### Authorization Request Details
-
-```json
-{
-  "policyStoreId": "YOUR_POLICY_STORE_ID",
-  "principal": {
-    "entityType": "Bookstore::User",
-    "entityId": "Toby"
-  },
-  "action": {
-    "actionType": "Bookstore::Action",
-    "actionId": "ViewWithPremiumOffers"
-  },
-  "resource": {
-    "entityType": "Bookstore::Book",
-    "entityId": "*"
-  },
-  "entities": {
-    "entityList": [
-      {
-        "identifier": {
-          "entityType": "Bookstore::User",
-          "entityId": "Toby"
-        },
-        "attributes": {
-          "yearsAsMember": {
-            "long": 4
-          }
-        },
-        "parents": [
-          {
-            "entityType": "Bookstore::Role",
-            "entityId": "Customer"
-          }
-        ]
-      }
-    ]
-  },
-  "context": {
-    "contextMap": {
-      "region": {
-        "string": "UK"
-      }
-    }
-  }
-}
-```
-
-In this scenario, the region context attribute plays a pivotal role. Despite Toby's role and membership duration, his location outside the US leads to the denial of access to the bookstore's offerings. This demonstrates the power of context-based access control in enforcing location-specific policies.
