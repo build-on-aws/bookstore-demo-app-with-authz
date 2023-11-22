@@ -85,6 +85,10 @@ def construct_authz_request(user_info):
 
     action_id = "View"
 
+    # Set `region` attribute in the context based on the specific user attributes.
+    region = user_info.get("region", "Unknown")
+    context_map = {"region": {"string": region}}
+
     return {
         "policyStoreId": os.environ.get("POLICY_STORE_ID"),
         "principal": {
@@ -97,7 +101,7 @@ def construct_authz_request(user_info):
         },
         "resource": resource,
         "entities": {"entityList": entities},
-        "context": {"contextMap": {}}
+        "context": {"contextMap": context_map}
     }
 
 

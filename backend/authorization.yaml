@@ -19,6 +19,16 @@ Resources:
                     "resourceTypes": [
                       "Book"
                     ],
+                    "context": {
+                      "type": "Record",
+                      "attributes": {
+                        "region": {
+                          "required": true,
+                          "name": "region",
+                          "type": "String"
+                        }
+                      }
+                    },
                     "principalTypes": [
                       "User"
                     ]
@@ -110,6 +120,21 @@ Resources:
               action in [ Bookstore::Action::"View" ],
               resource
             );
+
+  ContextStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Denies access for users outside the US region"
+          Statement: |
+            forbid (
+              principal,
+              action in [ Bookstore::Action::"View" ],
+              resource
+            )
+            when { context.region != "US" };
 
 Outputs:
 
