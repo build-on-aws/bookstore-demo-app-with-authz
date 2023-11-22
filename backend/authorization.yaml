@@ -133,6 +133,37 @@ Resources:
               resource
             );
 
+  RbacResourceOwnerStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows publishers to list books they have published"
+          Statement: |
+            permit (
+              principal in Bookstore::Role::"Publisher",
+              action in [ Bookstore::Action::"View" ],
+              resource
+            )
+            when {
+              principal == resource.owner
+            };
+
+  RbacExplicitStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Allows specific Publisher to list a specific book"
+          Statement: |
+            permit (
+              principal == Bookstore::User::"Dante",
+              action in [ Bookstore::Action::"View" ],
+              resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
+            );
+
   PermitAbacStaticPolicy:
     Type: AWS::VerifiedPermissions::Policy
     Properties:
