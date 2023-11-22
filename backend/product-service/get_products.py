@@ -18,6 +18,10 @@ HEADERS = {
     "Access-Control-Allow-Credentials": True,
 }
 
+POLICIES = {
+    "NO_PREMIUM_OFFERS": "Denies customers with specific value for yearsAsMember attribute to list premium offers",
+}
+
 verified_permissions_client = boto3.client("verifiedpermissions")
 
 
@@ -46,6 +50,20 @@ def lambda_handler(event: dict, context: LambdaContext):
         "headers": HEADERS,
         "body": json.dumps({"products": product_list}),
     }
+
+
+def get_policy_description(response):
+    logger.info(f"Response information: {response}")
+    policy_id = response.get("determiningPolicies", [{}])[0].get("policyId")
+
+    if policy_id:
+        policy_response = verified_permissions_client.get_policy(
+            policyStoreId=os.environ.get("POLICY_STORE_ID"),
+            policyId=policy_id
+        )
+        return policy_response.get("definition", {}).get("static", {}).get("description")
+
+    return ""
 
 
 def handle_is_authorized(user_info):
@@ -83,7 +101,15 @@ def construct_authz_request(user_info):
         "entityId": "*"
     }
 
+    # Determine action ID based on user role and yearsAsMember.
     action_id = "View"
+
+    if user_info["role"] == "Customer":
+        years_as_member = user_info.get("yearsAsMember", 0)
+
+        if years_as_member != "Unknown":
+            action_id = "ViewWithPremiumOffers"
+            entities[0]["attributes"]["yearsAsMember"] = {"long": int(years_as_member)}
 
     # Set `region` attribute in the context based on the specific user attributes.
     region = user_info.get("region", "Unknown")
@@ -110,6 +136,14 @@ def determine_product_list(response, user_info):
         if response["decision"] == "ALLOW":
             return books["books"]
         elif response["decision"] == "DENY":
+            # Handle the deny decision for customers that should not see premium offers.
+            if user_info["role"] == "Customer":
+                policy_description = get_policy_description(response)
+
+                if policy_description == POLICIES["NO_PREMIUM_OFFERS"]:
+                    # Return regular books for customers without premium offers.
+                    return [book for book in books["books"] if not book["premiumOffer"]]
+
             return []  # Return an empty list for denied access.
 
     return []

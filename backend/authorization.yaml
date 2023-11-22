@@ -34,6 +34,27 @@ Resources:
                     ]
                   },
                   "memberOf": []
+                },
+                "ViewWithPremiumOffers": {
+                  "appliesTo": {
+                    "principalTypes": [
+                      "User"
+                    ],
+                    "context": {
+                      "type": "Record",
+                      "attributes": {
+                        "region": {
+                          "required": true,
+                          "type": "String",
+                          "name": "region"
+                        }
+                      }
+                    },
+                    "resourceTypes": [
+                      "Book"
+                    ]
+                  },
+                  "memberOf": []
                 }
               },
               "entityTypes": {
@@ -50,7 +71,12 @@ Resources:
                   ],
                   "shape": {
                     "type": "Record",
-                    "attributes": {}
+                    "attributes": {
+                      "yearsAsMember": {
+                        "type": "Long",
+                        "required": false
+                      }
+                    }
                   }
                 },
                 "Book": {
@@ -107,19 +133,35 @@ Resources:
               resource
             );
 
-  RbacCustomerStaticPolicy:
+  PermitAbacStaticPolicy:
     Type: AWS::VerifiedPermissions::Policy
     Properties:
       PolicyStoreId: !Ref PolicyStore
       Definition:
         Static:
-          Description: "Allows customers to list all books"
+          Description: "Allows customers with specific value for yearsAsMember attribute to list premium offers"
           Statement: |
             permit (
               principal in Bookstore::Role::"Customer",
-              action in [ Bookstore::Action::"View" ],
+              action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
               resource
-            );
+            )
+            when { principal has yearsAsMember && principal.yearsAsMember >= 2 };
+
+  DenyAbacStaticPolicy:
+    Type: AWS::VerifiedPermissions::Policy
+    Properties:
+      PolicyStoreId: !Ref PolicyStore
+      Definition:
+        Static:
+          Description: "Denies customers with specific value for yearsAsMember attribute to list premium offers"
+          Statement: |
+            forbid (
+              principal in Bookstore::Role::"Customer",
+              action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
+              resource
+            )
+            when { principal has yearsAsMember && principal.yearsAsMember < 2 };
 
   ContextStaticPolicy:
     Type: AWS::VerifiedPermissions::Policy
@@ -131,7 +173,7 @@ Resources:
           Statement: |
             forbid (
               principal,
-              action in [ Bookstore::Action::"View" ],
+              action in [ Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers" ],
               resource
             )
             when { context.region != "US" };
