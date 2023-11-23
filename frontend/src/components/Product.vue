@@ -7,14 +7,20 @@
         </v-card-title>
       </v-col>
       <v-col>
-        <p class="text-truncate body-2 pt-2 pb-0 pr-2 grow text-right mb-1"><strong>Category</strong>: {{ product.category }}</p>
+        <p class="text-truncate body-2 pt-2 pb-0 pr-2 grow text-right mb-1">
+          <strong>Category</strong>: {{ product.category }}
+        </p>
       </v-col>
     </v-row>
     <v-card-text class="pt-0 pl-4 pb-0">
-      <p class="pt-0 pb-0 mb-0 body-2"><strong>Description</strong>: <em>{{ product.description }}</em></p>
+      <p class="pt-0 pb-0 mb-0 body-2">
+        <strong>Description</strong>: <em>{{ product.description }}</em>
+      </p>
       <p class="pt-0 pb-0 mb-0 body-2"><strong>Publisher</strong>: {{ product.publisher }}</p>
       <p class="price pt-0 pb-0 grow mb-1"><strong>Price</strong>: ${{ getPrice(product) }}</p>
-      <p v-if="product.premiumOffer" class="price pt-0 pb-0 grow accent--text mb-1"><v-icon style="color: var(--amazonOrange)">mdi-tag</v-icon> <strong>PREMIUM OFFER</strong></p>
+      <p v-if="product.premiumOffer" class="price pt-0 pb-0 grow accent--text mb-1">
+        <v-icon style="color: var(--amazonOrange)">mdi-tag</v-icon> <strong>PREMIUM OFFER</strong>
+      </p>
     </v-card-text>
   </v-card>
 </template>

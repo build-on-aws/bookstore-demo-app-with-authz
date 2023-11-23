@@ -13,8 +13,8 @@ with open("database.json", "r") as database:
 
 HEADERS = {
     "Access-Control-Allow-Origin": os.environ.get("ALLOWED_ORIGIN"),
-    "Access-Control-Allow-Headers": "Content-Type,Authorization,authorization",
-    "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+    "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization",
+    "Access-Control-Allow-Methods": "OPTIONS,GET",
     "Access-Control-Allow-Credentials": True,
 }
 

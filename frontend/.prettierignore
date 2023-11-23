@@ -1,0 +1,5 @@
+# Ignore computed artifacts.
+dist/
+
+# Ignore dependencies.
+node_modules/

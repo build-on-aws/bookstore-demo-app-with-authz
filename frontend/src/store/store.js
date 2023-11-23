@@ -9,6 +9,7 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     products: null,
+    loading: false,
     user: null,
   },
   getters,

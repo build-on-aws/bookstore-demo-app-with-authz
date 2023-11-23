@@ -19,13 +19,9 @@ AmplifyEventBus.$on("authState", async (state) => {
   if (state === "signedOut") {
     store.commit("setUser", null);
     store.commit("setUpProducts", null);
-    router
-      .push({ path: "/auth" })
-      .catch(() => {});
+    router.push({ path: "/auth" }).catch(() => {});
   } else if (state === "signedIn") {
-    router
-      .push({ path: new URLSearchParams(window.location.search).get("redirect") || "/" })
-      .catch(() => {});
+    router.push({ path: new URLSearchParams(window.location.search).get("redirect") || "/" }).catch(() => {});
   }
 });
 

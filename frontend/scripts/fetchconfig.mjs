@@ -3,7 +3,6 @@ import fs from "fs/promises";
 import { SSMClient, GetParametersByPathCommand } from "@aws-sdk/client-ssm";
 
 try {
-
   const args = process.argv.slice(2);
   const environmentType = args[0] ? args[0] : "";
   const client = new SSMClient();

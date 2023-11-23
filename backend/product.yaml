@@ -23,6 +23,7 @@ Metadata:
           default: "Authentication Layer Configuration"
         Parameters:
           - UserPoolId
+          - UserPoolArn
 
       - Label:
           default: "Authorization Layer Configuration"
@@ -38,6 +39,9 @@ Metadata:
 
       UserPoolId:
         default: "Name of the AWS Systems Manager (SSM) parameter that contains Amazon Cognito User Pool ID."
+
+      UserPoolArn:
+        default: "Name of the AWS Systems Manager (SSM) parameter that contains Amazon Cognito User Pool ARN."
 
       PolicyStoreId:
         default: "Name of the AWS Systems Manager (SSM) parameter that contains Amazon Verified Permissions Policy Store ID."
@@ -62,6 +66,11 @@ Parameters:
     Description: Name of the AWS Systems Manager (SSM) parameter that contains Amazon Cognito User Pool ID.
     Default: "/bookstore-demo-app-with-authz/authentication/user-pool-id"
 
+  UserPoolArn:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Name of the AWS Systems Manager (SSM) parameter that contains Amazon Cognito User Pool ARN.
+    Default: "/bookstore-demo-app-with-authz/authentication/user-pool-arn"
+
   PolicyStoreId:
     Type: "AWS::SSM::Parameter::Value<String>"
     Description: Name of the AWS Systems Manager (SSM) parameter that contains Amazon Verified Permissions Policy Store identifier.
@@ -84,9 +93,15 @@ Globals:
     OpenApiVersion: "2.0"
     Cors:
       AllowOrigin: !Sub "'${AllowedOrigin}'"
-      AllowMethods: "'OPTIONS,POST,GET'"
-      AllowHeaders: "'Content-Type,Authorization,authorization'"
+      AllowMethods: "'OPTIONS,GET'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization'"
       AllowCredentials: true
+    Auth:
+      DefaultAuthorizer: CognitoAuthorizer
+      Authorizers:
+        CognitoAuthorizer:
+          UserPoolArn: !Ref UserPoolArn
+      AddDefaultAuthorizerToCorsPreflight: false
 
 Resources:
 
