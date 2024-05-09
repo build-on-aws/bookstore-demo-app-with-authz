@@ -94,7 +94,17 @@ Start the frontend locally:
 $ make frontend-serve
 ```
 
-Once the service is running, you can access the frontend on `http://localhost:8080`. You can create an account by clicking on "*Sign In*" then "*Create Account*". Be sure to use a valid email address as you'll need to retrieve the verification code sent by *Amazon Cognito*.
+Once the service is running, you can access the frontend on `http://localhost:8080`.
+
+You can create an account by clicking on "*Sign In*" then "*Create Account*". Be sure to use a valid email address as you'll need to retrieve the verification code sent by *Amazon Cognito*. Or, you can automate the whole process by using a script:
+
+```bash
+$ python manage-app-users.py                                      \
+    --command create   # ... or delete, if you want to clean-up   \
+    --cognito-user-pool-id "<COGNITO_USER_POOL_ID>"               \
+    --email-prefix "your-first-part-of-the-email"                 \
+    --email-postfix "domain.com"
+```
 
 **Note:** [CORS](https://aws.amazon.com/what-is/cross-origin-resource-sharing/#:~:text=Cross-origin%20resource%20sharing%20(CORS,resources%20in%20a%20different%20domain.) headers on the backend service default to allowing `http://localhost:8080`. You will see *CORS* errors if you access the frontend using the IP address (like `http://127.0.0.1:8080`), or using a port other than 8080.
 
