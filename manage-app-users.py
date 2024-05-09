@@ -56,7 +56,7 @@ USERS = [
     {
         'username': 'Toby',
         'email_part': '+toby',
-        'role': 'Publisher',
+        'role': 'Customer',
         'yearsAsMember': '2',
     },
 ]
