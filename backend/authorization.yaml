@@ -9,6 +9,9 @@ Resources:
   PolicyStore:
     Type: AWS::VerifiedPermissions::PolicyStore
     Properties:
+      Description: Final version of the Cedar policy store that will be recreated independently.
+      ValidationSettings:
+        Mode: STRICT
       Schema:
         CedarJson: |
           {
@@ -95,8 +98,7 @@ Resources:
               }
             }
           }
-      ValidationSettings:
-        Mode: STRICT
+
 
   PolicyStoreIdSSM:
     Type: AWS::SSM::Parameter
@@ -104,110 +106,6 @@ Resources:
       Type: String
       Name: /bookstore-demo-app-with-authz/authorization/policy-store-id
       Value: !Ref PolicyStore
-
-  RbacAdminStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Allows admins to list all books"
-          Statement: |
-            permit (
-              principal in Bookstore::Role::"Admin",
-              action in [ Bookstore::Action::"View" ],
-              resource
-            );
-
-  RbacAdminForbidStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Denies admin Frank to list all books"
-          Statement: |
-            forbid (
-              principal == Bookstore::User::"Frank",
-              action in [ Bookstore::Action::"View" ],
-              resource
-            );
-
-  RbacResourceOwnerStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Allows publishers to list books they have published"
-          Statement: |
-            permit (
-              principal in Bookstore::Role::"Publisher",
-              action in [ Bookstore::Action::"View" ],
-              resource
-            )
-            when {
-              principal == resource.owner
-            };
-
-  RbacExplicitStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Allows specific Publisher to list a specific book"
-          Statement: |
-            permit (
-              principal == Bookstore::User::"Dante",
-              action in [ Bookstore::Action::"View" ],
-              resource == Bookstore::Book::"em1oadaa-b22k-4ea8-kk33-f6m217604o3m"
-            );
-
-  PermitAbacStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Allows customers with specific value for yearsAsMember attribute to list premium offers"
-          Statement: |
-            permit (
-              principal in Bookstore::Role::"Customer",
-              action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
-              resource
-            )
-            when { principal has yearsAsMember && principal.yearsAsMember >= 2 };
-
-  DenyAbacStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Denies customers with specific value for yearsAsMember attribute to list premium offers"
-          Statement: |
-            forbid (
-              principal in Bookstore::Role::"Customer",
-              action in [ Bookstore::Action::"ViewWithPremiumOffers" ],
-              resource
-            )
-            when { principal has yearsAsMember && principal.yearsAsMember < 2 };
-
-  ContextStaticPolicy:
-    Type: AWS::VerifiedPermissions::Policy
-    Properties:
-      PolicyStoreId: !Ref PolicyStore
-      Definition:
-        Static:
-          Description: "Denies access for users outside the US region"
-          Statement: |
-            forbid (
-              principal,
-              action in [ Bookstore::Action::"View", Bookstore::Action::"ViewWithPremiumOffers" ],
-              resource
-            )
-            when { context.region != "US" };
 
 Outputs:
 

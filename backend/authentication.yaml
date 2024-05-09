@@ -17,14 +17,28 @@ Resources:
           AttributeDataType: String
           Mutable: false
           Required: true
-        - Name: role
-          AttributeDataType: String
-          Mutable: true
-          Required: false
         - Name: yearsAsMember
           AttributeDataType: Number
           Mutable: true
           Required: false
+
+  CognitoAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Admins
+      UserPoolId: !Ref CognitoUserPool
+
+  CognitoPublisherGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Publishers
+      UserPoolId: !Ref CognitoUserPool
+
+  CognitoCustomerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Customers
+      UserPoolId: !Ref CognitoUserPool
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
