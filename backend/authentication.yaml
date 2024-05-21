@@ -17,6 +17,10 @@ Resources:
           AttributeDataType: String
           Mutable: false
           Required: true
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          Required: false
         - Name: yearsAsMember
           AttributeDataType: Number
           Mutable: true
