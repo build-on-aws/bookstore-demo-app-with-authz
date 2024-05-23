@@ -20,42 +20,49 @@ USERS = [
     {
         'username': 'Tom',
         'email_part': '+tom',
+        'role': 'Admin',
         'group': 'Admins',
         'yearsAsMember': '10',
     },
     {
         'username': 'Frank',
         'email_part': '+frank',
+        'role': 'Admin',
         'group': 'Admins',
         'yearsAsMember': '1',
     },
     {
         'username': 'Dante',
         'email_part': '+dante',
+        'role': 'Publisher',
         'group': 'Publishers',
         'yearsAsMember': '5',
     },
     {
         'username': 'William',
         'email_part': '+william',
+        'role': 'Publisher',
         'group': 'Publishers',
         'yearsAsMember': '1',
     },
     {
         'username': 'Andrew',
         'email_part': '+andrew',
+        'role': 'Customer',
         'group': 'Customers',
         'yearsAsMember': '3',
     },
     {
         'username': 'Susan',
         'email_part': '+susan',
+        'role': 'Customer',
         'group': 'Customers',
         'yearsAsMember': '1',
     },
     {
         'username': 'Toby',
         'email_part': '+toby',
+        'role': 'Customer',
         'group': 'Customers',
         'yearsAsMember': '2',
     },
@@ -94,7 +101,7 @@ for user in USERS:
                 },
                 {
                     'Name': 'custom:role',
-                    'Value': user['group']
+                    'Value': user['role']
                 },
                 {
                     'Name': 'custom:yearsAsMember',
