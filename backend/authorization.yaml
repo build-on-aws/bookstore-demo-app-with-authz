@@ -9,6 +9,9 @@ Resources:
   PolicyStore:
     Type: AWS::VerifiedPermissions::PolicyStore
     Properties:
+      Description: Final version of the Cedar policy store that will be recreated independently.
+      ValidationSettings:
+        Mode: STRICT
       Schema:
         CedarJson: |
           {
@@ -95,8 +98,6 @@ Resources:
               }
             }
           }
-      ValidationSettings:
-        Mode: STRICT
 
   PolicyStoreIdSSM:
     Type: AWS::SSM::Parameter

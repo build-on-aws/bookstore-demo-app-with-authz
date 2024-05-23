@@ -216,6 +216,54 @@ Resources:
             Path: /product/{book_id}
             Method: GET
 
+  CreateProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: product-service/
+      Handler: create_product.lambda_handler
+      Role: !GetAtt ProductServiceRole.Arn
+      Layers:
+        - !Ref UtilsLayer
+      Environment:
+        Variables:
+          LOG_LEVEL: "DEBUG"
+          POWERTOOLS_SERVICE_NAME: "product"
+          POWERTOOLS_METRICS_NAMESPACE: "bookstore-demo-app-with-authz"
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          POLICY_STORE_ID: !Ref PolicyStoreId
+          USER_POOL_ID: !Ref UserPoolId
+      Events:
+        CreateProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MainAPI
+            Path: /product
+            Method: POST
+
+  DeleteProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: product-service/
+      Handler: delete_product.lambda_handler
+      Role: !GetAtt ProductServiceRole.Arn
+      Layers:
+        - !Ref UtilsLayer
+      Environment:
+        Variables:
+          LOG_LEVEL: "DEBUG"
+          POWERTOOLS_SERVICE_NAME: "product"
+          POWERTOOLS_METRICS_NAMESPACE: "bookstore-demo-app-with-authz"
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          POLICY_STORE_ID: !Ref PolicyStoreId
+          USER_POOL_ID: !Ref UserPoolId
+      Events:
+        DeleteProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MainAPI
+            Path: /product/{book_id}
+            Method: DELETE
+
   ProductServiceApiUrl:
     Type: AWS::SSM::Parameter
     Properties:
