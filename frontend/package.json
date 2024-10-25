@@ -15,7 +15,7 @@
     "decimal.js": "~10.4.3",
     "dotenv": "~16.3.1",
     "v-mask": "~2.3.0",
-    "vue": "~2.7.2",
+    "vue": "~3.0.0",
     "vue-router": "~3.6.5",
     "vuelidate": "~0.7.7",
     "vuetify": "~2.7.1",
