@@ -50,8 +50,8 @@ You can review documentation for the authorization scenarios (including availabl
 Here you can find a list of the recommended prerequisites for this repository.
 
 - Pre-installed tools:
-  - Most recent *AWS CLI* (`2.13.37` or higher).
-  - Most recent *AWS SAM CLI* (`1.103.0` or higher).
+  - Most recent *AWS CLI* (`2.13.37` or higher, [Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html)).
+  - Most recent *AWS SAM CLI* (`1.103.0` or higher, [Installation Guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)).
   - Node.js in version `20.9.x` or higher.
   - Python in version `3.10.x` or higher.
 - Configured profile in the installed *AWS CLI* with credentials for your *AWS IAM* user account of choice.
