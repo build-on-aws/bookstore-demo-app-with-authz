@@ -1,4 +1,4 @@
-requests==2.32.0
+requests==2.32.4
 cognitojwt==1.4.1
 boto3==1.29.4
 aws-lambda-powertools==2.27.0
