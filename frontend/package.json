@@ -9,7 +9,7 @@
     "fetchConfig": "node scripts/fetchconfig.mjs"
   },
   "dependencies": {
-    "aws-amplify": "~6.13.4",
+    "aws-amplify": "~6.16.0",
     "aws-amplify-vue": "~0.3.3",
     "core-js": "~3.33.3",
     "decimal.js": "~10.4.3",
@@ -23,7 +23,7 @@
     "aws-sdk": "~2.1500.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-ssm": "~3.454.0",
+    "@aws-sdk/client-ssm": "~3.972.0",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
